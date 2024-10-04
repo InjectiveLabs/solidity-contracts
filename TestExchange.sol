@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.6.6;
+
 import {IExchangeModule} from "./Exchange.sol";
 
 contract TestExchange {
@@ -11,6 +12,23 @@ contract TestExchange {
         string memory denom,
         uint256 amount
     ) external returns (bool) {
-        return exchange.deposit(subaccountID, denom, amount);
+        return exchange.deposit(address(this), subaccountID, denom, amount);
+    }
+
+    function delegateDeposit(
+        string memory subaccountID,
+        string memory denom,
+        uint256 amount
+    ) external returns (bool) {
+        (bool success,) = exchangeContract.delegatecall(abi.encodeWithSignature("deposit(string,string,string,uint256)", address(this), subaccountID, denom, amount));
+        return success;
+    }
+
+    function withdraw(
+        string memory subaccountID,
+        string memory denom,
+        uint256 amount
+    ) external returns (bool) {
+         return exchange.withdraw(address(this), subaccountID, denom, amount);
     }
 }
