@@ -26,10 +26,10 @@ interface IExchangeModule {
       string calldata subaccountID,
       string calldata trader,
       uint32 subaccountNonce
-   ) external view returns (subaccountDepositData[] calldata deposits);
+   ) external view returns (SubaccountDepositData[] calldata deposits);
 
-   /// @dev subaccountDepositData contains the information about a deposit.
-   struct subaccountDepositData {
+   /// @dev SubaccountDepositData contains the information about a deposit.
+   struct SubaccountDepositData {
       string denom;
       uint256 availableBalance;
       uint256 totalBalance;
@@ -40,13 +40,13 @@ interface IExchangeModule {
    /// @return positions The array of positions
    function subaccountPositions(
       string calldata subaccountID
-   ) external view returns (derivativePosition[] calldata positions);
+   ) external view returns (DerivativePosition[] calldata positions);
 
-   /// @dev derivativePosition records the conditions under which the trader has
+   /// @dev DerivativePosition records the conditions under which the trader has
    /// entered into the a derivative contract.
    /// note derivative orders represent intent, while positions represent 
    /// possession.
-   struct derivativePosition {
+   struct DerivativePosition {
       string subaccountID;
       string marketID;
       bool isLong;
@@ -130,33 +130,33 @@ interface IExchangeModule {
    /// order cancellations (if any) occur first, followed by order creations 
    // (if any).
    /// @param sender The address of the sender
-   /// @param request cf. batchUpdateOrdersRequest
-   /// @return response cf. batchUpdateOrdersResponse
+   /// @param request cf. BatchUpdateOrdersRequest
+   /// @return response cf. BatchUpdateOrdersResponse
    function batchUpdateOrders(
       address sender,
-      batchUpdateOrdersRequest calldata request
-   ) external returns (batchUpdateOrdersResponse calldata response);
+      BatchUpdateOrdersRequest calldata request
+   ) external returns (BatchUpdateOrdersResponse calldata response);
 
-   /// @dev batchUpdateOrdersRequest encapsulates the parameters of batchUpdateOrders
-   struct batchUpdateOrdersRequest {
+   /// @dev BatchUpdateOrdersRequest encapsulates the parameters of batchUpdateOrders
+   struct BatchUpdateOrdersRequest {
       /// the sender's subaccount ID
       string subaccountID; 
       /// the list of spot market IDs for which the sender wants to cancel all open orders
       string[] spotMarketIDsToCancelAll; 
       /// the specific spot orders the sender wants to cancel
-      orderData[] spotOrdersToCancel;
+      OrderData[] spotOrdersToCancel;
       /// the spot orders the sender wants to create
-      spotOrder[] spotOrdersToCreate;
+      SpotOrder[] spotOrdersToCreate;
       /// the list of derivative market IDs for which the sender wants to cancel all open orders
       string[] derivativeMarketIDsToCancelAll;
       /// the specific derivative orders the sender wants to cancel
-      orderData[] derivativeOrdersToCancel;
+      OrderData[] derivativeOrdersToCancel;
       /// the derivative orders the sender wants to create
-      derivativeOrder[] derivativeOrdersToCreate;  
+      DerivativeOrder[] derivativeOrdersToCreate;  
    }
 
-   /// @dev batchUpdateOrdersResponse encapsulates the return values of batchUpdateOrders
-   struct batchUpdateOrdersResponse {
+   /// @dev BatchUpdateOrdersResponse encapsulates the return values of batchUpdateOrders
+   struct BatchUpdateOrdersResponse {
       /// reflects the success of spot order cancellations
       bool[] spotCancelSuccess;
       /// hashes of created spot orders
@@ -181,14 +181,14 @@ interface IExchangeModule {
    
    /// @dev retrieves a trader's derivative orders by market ID, subaccount ID, 
    /// and order hashes
-   /// @param request cf. derivativeOrdersRequest
+   /// @param request cf. DerivativeOrdersRequest
    /// @return orders the trader's derivative orders
    function derivativeOrdersByHashes(
-      derivativeOrdersRequest calldata request
-   ) external returns (trimmedDerivativeLimitOrder[] calldata orders);
+      DerivativeOrdersRequest calldata request
+   ) external returns (TrimmedDerivativeLimitOrder[] calldata orders);
 
    /// @dev encapsulates the parameters for derivativeOrdersByHashes
-   struct derivativeOrdersRequest { 
+   struct DerivativeOrdersRequest { 
       /// the ID of the market in which to look
       string marketID;
       /// the ID of the subaccount that created the orders
@@ -198,7 +198,7 @@ interface IExchangeModule {
    }
 
    /// @dev trimmed representation of a derivative limit order
-   struct trimmedDerivativeLimitOrder {
+   struct TrimmedDerivativeLimitOrder {
       uint256 price;
       uint256 quantity;
       uint256 margin;
@@ -214,7 +214,7 @@ interface IExchangeModule {
    ****************************************************************************/
    
    /// @dev encapsulates fields required to create a derivative order (market or limit)
-   struct derivativeOrder {
+   struct DerivativeOrder {
       /// the unique ID of the market
       string marketID;
       /// subaccount that placed the order
@@ -236,13 +236,13 @@ interface IExchangeModule {
    }
 
    /// @dev encapsulates the return values of createDerivativeLimitOrder
-   struct createDerivativeLimitOrderResponse {
+   struct CreateDerivativeLimitOrderResponse {
       string orderHash;
       string cid;
    }
 
    /// @dev encapsulates the return values of batchCreateDerivativeLimitOrders
-  struct batchCreateDerivativeLimitOrdersResponse {
+  struct BatchCreateDerivativeLimitOrdersResponse {
       // hashes of created derivative limit orders
       string[] orderHashes;
       // cids of created orders
@@ -252,7 +252,7 @@ interface IExchangeModule {
    }
 
    /// @dev encapsulates the return values of createDerivativeMarketOrderResponse
-   struct createDerivativeMarketOrderResponse {
+   struct CreateDerivativeMarketOrderResponse {
       string orderHash;
       string cid;
       uint256 quantity;
@@ -266,7 +266,7 @@ interface IExchangeModule {
    }
 
    /// @dev encapsulates data used to identify an order to cancel 
-   struct orderData {
+   struct OrderData {
       string marketID;
       string subaccountID;
       string orderHash;
@@ -287,30 +287,30 @@ interface IExchangeModule {
 
    /// @dev create a derivative limit order
    /// @param sender The address of the sender
-   /// @param order The derivative order to create (cf. derivativeOrder)
-   /// @return response cf createDerivativeLimitOrderResponse
+   /// @param order The derivative order to create (cf. DerivativeOrder)
+   /// @return response cf CreateDerivativeLimitOrderResponse
    function createDerivativeLimitOrder(
       address sender,
-      derivativeOrder calldata order
-   ) external returns (createDerivativeLimitOrderResponse calldata response);
+      DerivativeOrder calldata order
+   ) external returns (CreateDerivativeLimitOrderResponse calldata response);
 
    /// @dev create a batch of derivative limit orders
    /// @param sender The address of the sender
    /// @param orders The orders to create
-   /// @return response cf. batchCreateDerivativeLimitOrdersResponse
+   /// @return response cf. BatchCreateDerivativeLimitOrdersResponse
    function batchCreateDerivativeLimitOrders(
       address sender,
-      derivativeOrder[] calldata orders
-   ) external returns (batchCreateDerivativeLimitOrdersResponse calldata response);
+      DerivativeOrder[] calldata orders
+   ) external returns (BatchCreateDerivativeLimitOrdersResponse calldata response);
 
    /// @dev create a derivative market order
    /// @param sender The address of the sender
    /// @param order The order to create
-   /// @return response cf. batchCreateDerivativeMarketOrderResponse
+   /// @return response cf. CreateDerivativeMarketOrderResponse
    function createDerivativeMarketOrder(
       address sender,
-      derivativeOrder calldata order
-   ) external returns (createDerivativeMarketOrderResponse calldata response);
+      DerivativeOrder calldata order
+   ) external returns (CreateDerivativeMarketOrderResponse calldata response);
 
    /// @dev cancel a derivative order
    /// @param marketID The market the order is in
@@ -334,7 +334,7 @@ interface IExchangeModule {
    /// @return success Whether each cancellation succeeded
    function batchCancelDerivativeOrders(
       address sender,
-      orderData[] calldata data
+      OrderData[] calldata data
    ) external returns (bool[] calldata success);
 
    /// @dev increase the margin of a position
@@ -373,14 +373,14 @@ interface IExchangeModule {
  
    /// @dev retrieves a trader's spot orders by market ID, subaccount ID, 
    /// and order hashes
-   /// @param request cf. spotOrdersRequest
+   /// @param request cf. SpotOrdersRequest
    /// @return orders the trader's spot orders
    function spotOrdersByHashes(
-      spotOrdersRequest calldata request
-   ) external returns (trimmedSpotLimitOrder[] calldata orders);
+      SpotOrdersRequest calldata request
+   ) external returns (TrimmedSpotLimitOrder[] calldata orders);
 
    /// @dev encapsulates the parameters for spotOrdersByHashes
-   struct spotOrdersRequest {
+   struct SpotOrdersRequest {
       /// the ID of the market in which to look
       string marketID;
       /// the ID of the subaccount that placed the orders
@@ -390,7 +390,7 @@ interface IExchangeModule {
    }
 
    /// @dev trimmed representation of a spot limit order
-   struct trimmedSpotLimitOrder {
+   struct TrimmedSpotLimitOrder {
       uint256 price;
       uint256 quantity;
       /// the amount of the quantity remaining fillable
@@ -405,7 +405,7 @@ interface IExchangeModule {
    ****************************************************************************/
 
    /// @dev encapsulates fields required to create a spot order (market or limit)
-   struct spotOrder {
+   struct SpotOrder {
       /// the unique ID of the market
       string marketID;
       /// subaccount that creates the order
@@ -425,13 +425,13 @@ interface IExchangeModule {
    }
 
    /// @dev encapsulates the return values of createSpotLimitOrder
-   struct createSpotLimitOrderResponse {
+   struct CreateSpotLimitOrderResponse {
       string orderHash;
       string cid;
    }
 
    /// @dev encapsulates the return values of batchCreateSpotLimitOrders
-   struct batchCreateSpotLimitOrdersResponse {
+   struct BatchCreateSpotLimitOrdersResponse {
       /// hashes of created spot orders
       string[] orderHashes;
       /// cids of created spot orders
@@ -441,7 +441,7 @@ interface IExchangeModule {
    }
 
    /// @dev encapsulates the return values of createSpotMarketOrder
-   struct createSpotMarketOrderResponse {
+   struct CreateSpotMarketOrderResponse {
       string orderHash;
       string cid;
       uint256 quantity;
@@ -451,21 +451,21 @@ interface IExchangeModule {
 
    /// @dev create a spot limit order
    /// @param sender The address of the sender
-   /// @param order The spot order to create (cf. spotOrder)
-   /// @return response cf. createSpotLimitOrderResponse
+   /// @param order The spot order to create (cf. SpotOrder)
+   /// @return response cf. CreateSpotLimitOrderResponse
    function createSpotLimitOrder(
       address sender,
-      spotOrder calldata order
-   ) external returns (createSpotLimitOrderResponse calldata response);
+      SpotOrder calldata order
+   ) external returns (CreateSpotLimitOrderResponse calldata response);
 
    /// @dev create a batch of spot limit orders
    /// @param sender The address of the sender
    /// @param orders The orders to create
-   /// @return response cf. batchCreateSpotLimitOrdersResponse
+   /// @return response cf. BatchCreateSpotOrdersResponse
    function batchCreateSpotLimitOrders(
       address sender,
-      spotOrder[] calldata orders
-   ) external returns (batchCreateSpotLimitOrdersResponse calldata response);
+      SpotOrder[] calldata orders
+   ) external returns (BatchCreateSpotLimitOrdersResponse calldata response);
 
    /// @dev create a spot market order
    /// @param sender The address of the sender
@@ -473,8 +473,8 @@ interface IExchangeModule {
    /// @return response cf. batchCreateSpotMarketOrderResponse
    function createSpotMarketOrder(
       address sender,
-      spotOrder calldata order
-   ) external returns (createSpotMarketOrderResponse calldata response);
+      SpotOrder calldata order
+   ) external returns (CreateSpotMarketOrderResponse calldata response);
 
    /// @dev cancel a spot order
    /// @param marketID The market the order is in
@@ -496,7 +496,7 @@ interface IExchangeModule {
    /// @return success Whether each cancellation succeeded
    function batchCancelSpotOrders(
       address sender,
-      orderData[] calldata data
+      OrderData[] calldata data
    ) external returns (bool[] calldata success);
 
   
