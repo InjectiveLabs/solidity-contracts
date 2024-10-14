@@ -31,4 +31,10 @@ contract TestExchange {
     ) external returns (bool) {
          return exchange.withdraw(address(this), subaccountID, denom, amount);
     }
+
+    function createDerivativeLimitOrder(
+        IExchangeModule.DerivativeOrder calldata order
+    ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
+        return exchange.createDerivativeLimitOrder(address(this), order);
+    }
 }
