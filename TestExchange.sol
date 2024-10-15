@@ -37,4 +37,11 @@ contract TestExchange {
     ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
         return exchange.createDerivativeLimitOrder(address(this), order);
     }
+
+     function createDerivativeLimitOrderAuthz(
+        address sender,
+        IExchangeModule.DerivativeOrder calldata order
+    ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
+        return exchange.createDerivativeLimitOrderAuthz(sender, order);
+    }
 }
