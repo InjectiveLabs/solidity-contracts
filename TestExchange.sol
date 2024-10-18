@@ -42,6 +42,10 @@ contract TestExchange {
         address sender,
         IExchangeModule.DerivativeOrder calldata order
     ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
-        return exchange.createDerivativeLimitOrderAuthz(sender, order);
+        try exchange.createDerivativeLimitOrderAuthz(sender, order) returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory resp) {
+            return resp;
+        } catch {
+            revert("error creating derivative limit order");
+        }
     }
 }
