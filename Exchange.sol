@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-interface IExchangeModule {
+import {IAuthorization} from "./Authorization.sol";
+
+interface IExchangeModule is IAuthorization {
    /****************************************************************************
    * ACCOUNT QUERIES                                                           * 
    ****************************************************************************/
