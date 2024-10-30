@@ -3,6 +3,9 @@ pragma solidity ^0.8.4;
 
 import {IAuthorization} from "./Authorization.sol";
 
+/// @dev Define all the available exchange methods.
+string constant MSG_CREATE_DERIVATIVE_LIMIT_ORDER = "/cosmos.exchange.v1beta1.MsgCreateDerivativeLimitOrder";
+
 interface IExchangeModule is IAuthorization {
    /****************************************************************************
    * ACCOUNT QUERIES                                                           * 

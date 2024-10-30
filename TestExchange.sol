@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.6.6;
 
-import {IExchangeModule} from "./Exchange.sol";
+import {IExchangeModule, MSG_CREATE_DERIVATIVE_LIMIT_ORDER} from "./Exchange.sol";
 
 contract TestExchange {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
@@ -38,10 +38,23 @@ contract TestExchange {
         return exchange.createDerivativeLimitOrder(address(this), order);
     }
 
-     function createDerivativeLimitOrderAuthz(
+    function approveCreateDerivativeLimitOrder() external returns (bool success) {
+        string[] memory methods = new string[](1);
+        methods[0] = MSG_CREATE_DERIVATIVE_LIMIT_ORDER;
+
+        try exchange.approve(address(this), 0, methods) returns (bool approved) {
+            return approved;
+        } catch {
+            revert("error approving createDerivativeLimitOrder msg");
+        }
+    }
+
+    function createDerivativeLimitOrderAuthz(
         address sender,
         IExchangeModule.DerivativeOrder calldata order
     ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
+        
+        
         try exchange.createDerivativeLimitOrderAuthz(sender, order) returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory resp) {
             return resp;
         } catch {
