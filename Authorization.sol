@@ -4,18 +4,16 @@ pragma solidity >=0.8.17;
 /// @title Authorization Interface
 /// @dev The interface through which solidity contracts will interact with smart contract approvals.
 interface IAuthorization {
-    /// @dev Approves a list of Cosmos or IBC transactions with a specific amount of tokens.
+    /// @dev Approves a list of Cosmos messages.
     /// @param grantee The contract address which will have an authorization to spend the origin funds.
-    /// @param amount The amount of tokens to be spent.
     /// @param methods The message type URLs of the methods to approve.
     /// @return approved Boolean value to indicate if the approval was successful.
     function approve(
         address grantee,
-        uint256 amount,
         string[] calldata methods
     ) external returns (bool approved);
 
-    /// @dev Revokes a list of Cosmos transactions.
+    /// @dev Revokes a list of Cosmos messages.
     /// @param grantee The contract address which will have its allowances revoked.
     /// @param methods The message type URLs of the methods to revoke.
     /// @return revoked Boolean value to indicate if the revocation was successful.
@@ -23,30 +21,6 @@ interface IAuthorization {
         address grantee,
         string[] calldata methods
     ) external returns (bool revoked);
-
-    /// @dev Increase the allowance of a given spender by a specific amount of tokens for IBC
-    /// transfer methods or staking.
-    /// @param grantee The contract address which allowance will be increased.
-    /// @param amount The amount of tokens to be spent.
-    /// @param methods The message type URLs of the methods to approve.
-    /// @return approved Boolean value to indicate if the approval was successful.
-    function increaseAllowance(
-        address grantee,
-        uint256 amount,
-        string[] calldata methods
-    ) external returns (bool approved);
-
-    /// @dev Decreases the allowance of a given spender by a specific amount of tokens for IBC
-    /// transfer methods or staking.
-    /// @param grantee The contract address which allowance will be decreased.
-    /// @param amount The amount of tokens to be spent.
-    /// @param methods The message type URLs of the methods to approve.
-    /// @return approved Boolean value to indicate if the approval was successful.
-    function decreaseAllowance(
-        address grantee,
-        uint256 amount,
-        string[] calldata methods
-    ) external returns (bool approved);
 
     /// @dev Returns the remaining number of tokens that spender will be allowed to spend
     /// on behalf of the owner through IBC transfer methods or staking. This is zero by default.

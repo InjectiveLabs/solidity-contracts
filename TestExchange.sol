@@ -42,7 +42,7 @@ contract TestExchange {
         string[] memory methods = new string[](1);
         methods[0] = MSG_CREATE_DERIVATIVE_LIMIT_ORDER;
 
-        try exchange.approve(address(this), 0, methods) returns (bool approved) {
+        try exchange.approve(address(this), methods) returns (bool approved) {
             return approved;
         } catch {
             revert("error approving createDerivativeLimitOrder msg");
