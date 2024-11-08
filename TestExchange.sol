@@ -7,6 +7,7 @@ contract TestExchange {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
     IExchangeModule exchange = IExchangeModule(exchangeContract);
 
+    // deposit funds into subaccount belonging to this contract
     function deposit(
         string memory subaccountID,
         string memory denom,
@@ -15,6 +16,18 @@ contract TestExchange {
         return exchange.deposit(address(this), subaccountID, denom, amount);
     }
 
+    // withdraw funds from a subaccount belonging to this contract
+    function withdraw(
+        string memory subaccountID,
+        string memory denom,
+        uint256 amount
+    ) external returns (bool) {
+         return exchange.withdraw(address(this), subaccountID, denom, amount);
+    }
+
+    // delegateDeposit attempts to call the precompile via delegateCall. This is
+    // here for testing, and we expect any call to this method to return an 
+    // error because the precompile doesn't support delegateCall. 
     function delegateDeposit(
         string memory subaccountID,
         string memory denom,
@@ -24,14 +37,8 @@ contract TestExchange {
         return success;
     }
 
-    function withdraw(
-        string memory subaccountID,
-        string memory denom,
-        uint256 amount
-    ) external returns (bool) {
-         return exchange.withdraw(address(this), subaccountID, denom, amount);
-    }
-
+    // create a grant, from the origin to this contract, so that this contract
+    // can create derivative limit orders on behalf of the origin
     function approveCreateDerivativeLimitOrder() external returns (bool success) {
         string[] memory methods = new string[](1);
         methods[0] = MSG_CREATE_DERIVATIVE_LIMIT_ORDER;
@@ -43,7 +50,11 @@ contract TestExchange {
         }
     }
 
-    function createDerivativeLimitOrderAuthz(
+    // create a derivative limit order on behalf of the specified sender. It 
+    // will return an error if this smart-contract doesn't have a grant from the
+    // sender to perform this action on their behalf. 
+    // cf approveCreateDerivativeLimitOrder for granting authorization
+    function createDerivativeLimitOrder(
         address sender,
         IExchangeModule.DerivativeOrder calldata order
     ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
