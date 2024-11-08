@@ -298,16 +298,6 @@ interface IExchangeModule is IAuthorization {
       DerivativeOrder calldata order
    ) external returns (CreateDerivativeLimitOrderResponse calldata response);
 
-   /// @dev create a derivative limit order with a sender that isn't necessarily the caller
-   /// @param sender The address of the sender
-   /// @param order The derivative order to create (cf. DerivativeOrder)
-   /// @return response cf CreateDerivativeLimitOrderResponse
-   function createDerivativeLimitOrderAuthz(
-      address sender,
-      DerivativeOrder calldata order
-   ) external returns (CreateDerivativeLimitOrderResponse calldata response);
-
-
    /// @dev create a batch of derivative limit orders
    /// @param sender The address of the sender
    /// @param orders The orders to create
