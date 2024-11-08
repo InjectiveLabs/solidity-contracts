@@ -50,6 +50,18 @@ contract TestExchange {
         }
     }
 
+    // revoke a CreateDerivativeLimitOrder grant from the origin to this contract
+    function revokeCreateDerivativeLimitOrder() external returns (bool success) {
+        string[] memory methods = new string[](1);
+        methods[0] = MSG_CREATE_DERIVATIVE_LIMIT_ORDER;
+
+        try exchange.revoke(address(this), methods) returns (bool revoked) {
+            return revoked;
+        } catch {
+            revert("error revoking createDerivativeLimitOrder msg");
+        }
+    }
+
     // create a derivative limit order on behalf of the specified sender. It 
     // will return an error if this smart-contract doesn't have a grant from the
     // sender to perform this action on their behalf. 
