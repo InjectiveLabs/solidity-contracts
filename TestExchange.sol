@@ -62,6 +62,18 @@ contract TestExchange {
         }
     }
 
+    function queryAllowance(
+        address grantee,
+        address granter, 
+        string calldata msgUrl
+    ) external view returns (bool allowed) {
+        try exchange.allowance(grantee, granter, msgUrl) returns (bool isAllowed) {
+            return isAllowed;
+        } catch {
+            revert("error querying allowance");
+        }
+    }
+
     // create a derivative limit order on behalf of the specified sender. It 
     // will return an error if this smart-contract doesn't have a grant from the
     // sender to perform this action on their behalf. 

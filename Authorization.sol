@@ -22,15 +22,15 @@ interface IAuthorization {
         string[] calldata methods
     ) external returns (bool revoked);
 
-    /// @dev Returns the remaining number of tokens that spender will be allowed to spend
-    /// on behalf of the owner through IBC transfer methods or staking. This is zero by default.
+    /// @dev Checks if there is a valid grant from granter to grantee for specified
+    /// message type
     /// @param grantee The contract address which has the Authorization.
     /// @param granter The account address that grants an Authorization.
     /// @param method The message type URL of the methods for which the approval should be queried.
-    /// @return remaining The remaining number of tokens available to be spent.
+    /// @return allowed Boolean value to indicatie if the grant exists and is not expired
     function allowance(
         address grantee,
         address granter,
         string calldata method
-    ) external view returns (uint256 remaining);
+    ) external view returns (bool allowed);
 }
