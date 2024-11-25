@@ -4,7 +4,27 @@ pragma solidity ^0.8.4;
 import {IAuthorization} from "./Authorization.sol";
 
 /// @dev Define all the exchange methods available for approval.
+string constant MSG_DEPOSIT = "/injective.exchange.v1beta1.MsgDeposit";
+string constant MSG_WITHDRAW = "/injective.exchange.v1beta1.MsgWithdraw";
+string constant MSG_SUBACCOUNT_TRANSFER = "/injective.exchange.v1beta1.MsgSubaccountTransfer";
+string constant MSG_EXTERNAL_TRANSFER = "/injective.exchange.v1beta1.MsgExternalTransfer";
+string constant MSG_INCREASE_POSITION_MARGIN = "/injective.exchange.v1beta1.MsgIncreasePositionMargin";
+string constant MSG_DECREASE_POSITION_MARGIN = "/injective.exchange.v1beta1.MsgDecreasePositionMargin";
+string constant MSG_BATCH_UPDATE_ORDERS = "/injective.exchange.v1beta1.MsgBatchUpdateOrders";
+
 string constant MSG_CREATE_DERIVATIVE_LIMIT_ORDER = "/injective.exchange.v1beta1.MsgCreateDerivativeLimitOrder";
+string constant MSG_BATCH_CREATE_DERIVATIVE_LIMIT_ORDERS = "/injective.exchange.v1beta1.MsgBatchCreateDerivativeLimitOrders";
+string constant MSG_CREATE_DERIVATIVE_MARKET_ORDER = "/injective.exchange.v1beta1.MsgCreateDerivativeMarketOrder";
+string constant MSG_CANCEL_DERIVATIVE_ORDER = "/injective.exchange.v1beta1.MsgCancelDerivativeOrder";
+string constant MSG_BATCH_CANCEL_DERIVATIVE_ORDERS = "/injective.exchange.v1beta1.MsgBatchCancelDerivativeOrders";
+
+string constant MSG_CREATE_SPOT_LIMIT_ORDER = "/injective.exchange.v1beta1.MsgCreateSpotLimitOrder";
+string constant MSG_BATCH_CREATE_SPOT_LIMIT_ORDERS = "/injective.exchange.v1beta1.MsgBatchCreateSpotLimitOrders";
+string constant MSG_CREATE_SPOT_MARKET_ORDER = "/injective.exchange.v1beta1.MsgCreateSpotMarketOrder";
+string constant MSG_CANCEL_SPOT_ORDER = "/injective.exchange.v1beta1.MsgCancelSpotOrder";
+string constant MSG_BATCH_CANCEL_SPOT_ORDERS = "/injective.exchange.v1beta1.MsgBatchCancelSpotOrders";
+
+
 
 interface IExchangeModule is IAuthorization {
    /****************************************************************************
