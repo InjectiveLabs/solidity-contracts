@@ -24,8 +24,6 @@ string constant MSG_CREATE_SPOT_MARKET_ORDER = "/injective.exchange.v1beta1.MsgC
 string constant MSG_CANCEL_SPOT_ORDER = "/injective.exchange.v1beta1.MsgCancelSpotOrder";
 string constant MSG_BATCH_CANCEL_SPOT_ORDERS = "/injective.exchange.v1beta1.MsgBatchCancelSpotOrders";
 
-
-
 interface IExchangeModule is IAuthorization {
    /****************************************************************************
    * ACCOUNT QUERIES                                                           * 

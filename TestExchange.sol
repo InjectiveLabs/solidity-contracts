@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.6.6;
 
-import {IExchangeModule, MSG_CREATE_DERIVATIVE_LIMIT_ORDER } from "./Exchange.sol";
+import  "./Exchange.sol";
 
 contract TestExchange {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
@@ -61,6 +61,49 @@ contract TestExchange {
             revert("error revoking createDerivativeLimitOrder msg");
         }
     }
+
+    function getAllExchangeMethods() internal pure returns (string[] memory methods) {
+        methods = new string[](17);
+        methods[0] = MSG_DEPOSIT;
+        methods[1] = MSG_WITHDRAW;
+        methods[2] = MSG_SUBACCOUNT_TRANSFER;
+        methods[3] = MSG_EXTERNAL_TRANSFER;
+        methods[4] = MSG_INCREASE_POSITION_MARGIN;
+        methods[5] = MSG_DECREASE_POSITION_MARGIN;
+        methods[6] = MSG_BATCH_UPDATE_ORDERS;
+        methods[7] = MSG_CREATE_DERIVATIVE_LIMIT_ORDER;
+        methods[8] = MSG_BATCH_CREATE_DERIVATIVE_LIMIT_ORDERS;
+        methods[9] = MSG_CREATE_DERIVATIVE_MARKET_ORDER;
+        methods[10] = MSG_CANCEL_DERIVATIVE_ORDER;
+        methods[11] = MSG_BATCH_CANCEL_DERIVATIVE_ORDERS;
+        methods[12] = MSG_CREATE_SPOT_LIMIT_ORDER;
+        methods[13] = MSG_BATCH_CREATE_SPOT_LIMIT_ORDERS;
+        methods[14] = MSG_CREATE_SPOT_MARKET_ORDER;
+        methods[15] = MSG_CANCEL_SPOT_ORDER;
+        methods[16] = MSG_BATCH_CANCEL_SPOT_ORDERS;
+        return methods;
+    }
+
+    function approveAll() external returns (bool success) {
+        string[] memory methods = getAllExchangeMethods();
+
+        try exchange.approve(address(this), methods) returns (bool approved) {
+            return approved;
+        } catch {
+            revert("error approving exchange msgs");
+        }
+    }
+
+    function revokeAll() external returns (bool success) {
+        string[] memory methods = getAllExchangeMethods();
+
+        try exchange.revoke(address(this), methods) returns (bool revoked) {
+            return revoked;
+        } catch {
+            revert("error revoking exchange msgs");
+        }
+    }
+
 
     function queryAllowance(
         address grantee,
