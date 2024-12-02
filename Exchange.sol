@@ -1,30 +1,68 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import {IAuthorization} from "./Authorization.sol";
+import {Cosmos} from "./CosmosTypes.sol";
 
-/// @dev Define all the exchange methods available for approval.
-string constant MSG_DEPOSIT = "/injective.exchange.v1beta1.MsgDeposit";
-string constant MSG_WITHDRAW = "/injective.exchange.v1beta1.MsgWithdraw";
-string constant MSG_SUBACCOUNT_TRANSFER = "/injective.exchange.v1beta1.MsgSubaccountTransfer";
-string constant MSG_EXTERNAL_TRANSFER = "/injective.exchange.v1beta1.MsgExternalTransfer";
-string constant MSG_INCREASE_POSITION_MARGIN = "/injective.exchange.v1beta1.MsgIncreasePositionMargin";
-string constant MSG_DECREASE_POSITION_MARGIN = "/injective.exchange.v1beta1.MsgDecreasePositionMargin";
-string constant MSG_BATCH_UPDATE_ORDERS = "/injective.exchange.v1beta1.MsgBatchUpdateOrders";
 
-string constant MSG_CREATE_DERIVATIVE_LIMIT_ORDER = "/injective.exchange.v1beta1.MsgCreateDerivativeLimitOrder";
-string constant MSG_BATCH_CREATE_DERIVATIVE_LIMIT_ORDERS = "/injective.exchange.v1beta1.MsgBatchCreateDerivativeLimitOrders";
-string constant MSG_CREATE_DERIVATIVE_MARKET_ORDER = "/injective.exchange.v1beta1.MsgCreateDerivativeMarketOrder";
-string constant MSG_CANCEL_DERIVATIVE_ORDER = "/injective.exchange.v1beta1.MsgCancelDerivativeOrder";
-string constant MSG_BATCH_CANCEL_DERIVATIVE_ORDERS = "/injective.exchange.v1beta1.MsgBatchCancelDerivativeOrders";
+interface IExchangeModule {
+   /****************************************************************************
+   * AUTHZ                                                                    * 
+   ****************************************************************************/
+   
+   /// @dev Define all the exchange methods available for approval.
+   enum MsgType {
+      DEPOSIT,
+      WITHDRAW,
+      SUBACCOUNT_TRANSFER,
+      EXTERNAL_TRANSFER,
+      INCREASE_POSITION_MARGIN,
+      DECREASE_POSITION_MARGIN,
+      BATCH_UPDATE_ORDERS,
+      CREATE_DERIVATIVE_LIMIT_ORDER,
+      BATCH_CREATE_DERIVATIVE_LIMIT_ORDERS,
+      CREATE_DERIVATIVE_MARKET_ORDER,
+      CANCEL_DERIVATIVE_ORDER,
+      BATCH_CANCEL_DERIVATIVE_ORDERS,
+      CREATE_SPOT_LIMIT_ORDER,
+      BATCH_CREATE_SPOT_LIMIT_ORDERS,
+      CREATE_SPOT_MARKET_ORDER,
+      CANCEL_SPOT_ORDER,
+      BATCH_CANCEL_SPOT_ORDERS
+   }
 
-string constant MSG_CREATE_SPOT_LIMIT_ORDER = "/injective.exchange.v1beta1.MsgCreateSpotLimitOrder";
-string constant MSG_BATCH_CREATE_SPOT_LIMIT_ORDERS = "/injective.exchange.v1beta1.MsgBatchCreateSpotLimitOrders";
-string constant MSG_CREATE_SPOT_MARKET_ORDER = "/injective.exchange.v1beta1.MsgCreateSpotMarketOrder";
-string constant MSG_CANCEL_SPOT_ORDER = "/injective.exchange.v1beta1.MsgCancelSpotOrder";
-string constant MSG_BATCH_CANCEL_SPOT_ORDERS = "/injective.exchange.v1beta1.MsgBatchCancelSpotOrders";
+   /// @dev Approves a list of Cosmos messages.
+   /// @param grantee The account address which will have an authorization to spend the origin funds.
+   /// @param methods The message type URLs of the methods to approve.
+   /// @param spendLimit The spend limit for the methods.
+   /// @return approved Boolean value to indicate if the approval was successful.
+   function approve(
+      address grantee,
+      MsgType[] calldata methods,
+      Cosmos.Coin[] calldata spendLimit
+   ) external returns (bool approved);
 
-interface IExchangeModule is IAuthorization {
+   /// @dev Revokes a list of Cosmos messages.
+   /// @param grantee The contract address which will have its allowances revoked.
+   /// @param methods The message type URLs of the methods to revoke.
+   /// @return revoked Boolean value to indicate if the revocation was successful.
+   function revoke(
+      address grantee,
+      MsgType[] calldata methods
+   ) external returns (bool revoked);
+
+   /// @dev Checks if there is a valid grant from granter to grantee for specified
+   /// message type
+   /// @param grantee The contract address which has the Authorization.
+   /// @param granter The account address that grants an Authorization.
+   /// @param method The message type URL of the methods for which the approval should be queried.
+   /// @return allowed Boolean value to indicatie if the grant exists and is not expired
+   function allowance(
+      address grantee,
+      address granter,
+      MsgType method
+   ) external view returns (bool allowed);
+
+
    /****************************************************************************
    * ACCOUNT QUERIES                                                           * 
    ****************************************************************************/
