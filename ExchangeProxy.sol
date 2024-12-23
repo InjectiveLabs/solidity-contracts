@@ -8,11 +8,10 @@ contract ExchangeProxy {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
     IExchangeModule exchange = IExchangeModule(exchangeContract);
 
-   
     /// @dev Approves a message type, so that this contract can submit it on 
-    //behalf of the origin. 
+    /// behalf of the origin. 
     /// @param msgType The type of the message to approve.
-    /// @param spendLimit The spend limit for the message type URL.
+    /// @param spendLimit The spend limit for the message type.
     /// @return success Boolean value to indicate if the approval was successful.
     function approve(
         IExchangeModule.MsgType msgType,
@@ -74,5 +73,6 @@ contract ExchangeProxy {
         }
     }
 
+    //*************************************************************************/
 
 }
