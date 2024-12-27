@@ -74,7 +74,7 @@ contract ExchangeTest {
 
     //  depositTest1 is used ot test that our evm module is not affected by the
     // bug outlined here:
-    // https://github.com/InjectiveLabs/injective-core/issues/1000
+    https://github.com/evmos/evmos/security/advisories/GHSA-3fp5-2xwh-fxm6
     function depositTest1(
         string memory subaccountID,
         string memory denom,
