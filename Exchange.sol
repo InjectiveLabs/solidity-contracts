@@ -2,34 +2,13 @@
 pragma solidity ^0.8.4;
 
 import {Cosmos} from "./CosmosTypes.sol";
-
+import {ExchangeTypes} from "./ExchangeTypes.sol";
 
 interface IExchangeModule {
    /****************************************************************************
    * AUTHZ                                                                    * 
    ****************************************************************************/
    
-   /// @dev Define all the exchange methods available for approval.
-   enum MsgType {
-      DEPOSIT,
-      WITHDRAW,
-      SUBACCOUNT_TRANSFER,
-      EXTERNAL_TRANSFER,
-      INCREASE_POSITION_MARGIN,
-      DECREASE_POSITION_MARGIN,
-      BATCH_UPDATE_ORDERS,
-      CREATE_DERIVATIVE_LIMIT_ORDER,
-      BATCH_CREATE_DERIVATIVE_LIMIT_ORDERS,
-      CREATE_DERIVATIVE_MARKET_ORDER,
-      CANCEL_DERIVATIVE_ORDER,
-      BATCH_CANCEL_DERIVATIVE_ORDERS,
-      CREATE_SPOT_LIMIT_ORDER,
-      BATCH_CREATE_SPOT_LIMIT_ORDERS,
-      CREATE_SPOT_MARKET_ORDER,
-      CANCEL_SPOT_ORDER,
-      BATCH_CANCEL_SPOT_ORDERS
-   }
-
    /// @dev Approves a list of Cosmos messages.
    /// @param grantee The account address which will have an authorization to spend the origin funds.
    /// @param methods The message type URLs of the methods to approve.
@@ -37,7 +16,7 @@ interface IExchangeModule {
    /// @return approved Boolean value to indicate if the approval was successful.
    function approve(
       address grantee,
-      MsgType[] calldata methods,
+      ExchangeTypes.MsgType[] calldata methods,
       Cosmos.Coin[] calldata spendLimit
    ) external returns (bool approved);
 
@@ -47,7 +26,7 @@ interface IExchangeModule {
    /// @return revoked Boolean value to indicate if the revocation was successful.
    function revoke(
       address grantee,
-      MsgType[] calldata methods
+      ExchangeTypes.MsgType[] calldata methods
    ) external returns (bool revoked);
 
    /// @dev Checks if there is a valid grant from granter to grantee for specified
@@ -59,7 +38,7 @@ interface IExchangeModule {
    function allowance(
       address grantee,
       address granter,
-      MsgType method
+      ExchangeTypes.MsgType method
    ) external view returns (bool allowed);
 
 

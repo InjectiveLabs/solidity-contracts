@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.6.6;
 
-import  "./Exchange.sol";
+import "./Exchange.sol";
 import "./CosmosTypes.sol";
+import "./ExchangeTypes.sol";
 
 contract ExchangeProxy {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
@@ -14,10 +15,10 @@ contract ExchangeProxy {
     /// @param spendLimit The spend limit for the message type.
     /// @return success Boolean value to indicate if the approval was successful.
     function approve(
-        IExchangeModule.MsgType msgType,
+        ExchangeTypes.MsgType msgType,
         Cosmos.Coin[] memory spendLimit
     ) external returns (bool success) {
-        IExchangeModule.MsgType[] memory methods = new IExchangeModule.MsgType[](1);
+        ExchangeTypes.MsgType[] memory methods = new ExchangeTypes.MsgType[](1);
         methods[0] = msgType;
 
         try exchange.approve(address(this), methods, spendLimit) returns (bool approved) {
@@ -30,8 +31,8 @@ contract ExchangeProxy {
     /// @dev Revokes a grant from the origin to this contract for a specific method
     /// @param msgType The type of the message to revoke.
     /// @return success Boolean value to indicate if the revocation was successful.
-    function revoke(IExchangeModule.MsgType msgType) external returns (bool success) {
-        IExchangeModule.MsgType[] memory methods = new IExchangeModule.MsgType[](1);
+    function revoke(ExchangeTypes.MsgType msgType) external returns (bool success) {
+        ExchangeTypes.MsgType[] memory methods = new ExchangeTypes.MsgType[](1);
         methods[0] = msgType;
 
         try exchange.revoke(address(this), methods) returns (bool revoked) {
@@ -64,7 +65,7 @@ contract ExchangeProxy {
     function queryAllowance(
         address grantee,
         address granter, 
-        IExchangeModule.MsgType msgType
+        ExchangeTypes.MsgType msgType
     ) external view returns (bool allowed) {
         try exchange.allowance(grantee, granter, msgType) returns (bool isAllowed) {
             return isAllowed;

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.6.6;
 
-import  "./Exchange.sol";
+import "./Exchange.sol";
+import "./ExchangeTypes.sol";
 
 contract ExchangeTest {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
@@ -56,10 +57,10 @@ contract ExchangeTest {
     /// @param spendLimit The spend limit for the message type.
     /// @return success Boolean value to indicate if the approval was successful.
     function approve(
-        IExchangeModule.MsgType msgType,
+        ExchangeTypes.MsgType msgType,
         Cosmos.Coin[] memory spendLimit
     ) external returns (bool success) {
-        IExchangeModule.MsgType[] memory methods = new IExchangeModule.MsgType[](1);
+        ExchangeTypes.MsgType[] memory methods = new ExchangeTypes.MsgType[](1);
         methods[0] = msgType;
 
         try exchange.approve(address(this), methods, spendLimit) returns (bool approved) {
@@ -74,7 +75,7 @@ contract ExchangeTest {
 
     //  depositTest1 is used ot test that our evm module is not affected by the
     // bug outlined here:
-    https://github.com/evmos/evmos/security/advisories/GHSA-3fp5-2xwh-fxm6
+    // https://github.com/evmos/evmos/security/advisories/GHSA-3fp5-2xwh-fxm6
     function depositTest1(
         string memory subaccountID,
         string memory denom,
