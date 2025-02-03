@@ -10,18 +10,20 @@ interface IExchangeModule {
    ****************************************************************************/
    
    /// @dev Approves a list of Cosmos messages.
-   /// @param grantee The account address which will have an authorization to spend the origin funds.
+   /// @param grantee The account address which will be authorized to spend the origin's funds.
    /// @param methods The message type URLs of the methods to approve.
    /// @param spendLimit The spend limit for the methods.
+   /// @param duration The time period for which the authorization is valid (in seconds).
    /// @return approved Boolean value to indicate if the approval was successful.
    function approve(
       address grantee,
       ExchangeTypes.MsgType[] calldata methods,
-      Cosmos.Coin[] calldata spendLimit
+      Cosmos.Coin[] calldata spendLimit,
+      uint256 duration
    ) external returns (bool approved);
 
    /// @dev Revokes a list of Cosmos messages.
-   /// @param grantee The contract address which will have its allowances revoked.
+   /// @param grantee The account address which will have its allowances revoked.
    /// @param methods The message type URLs of the methods to revoke.
    /// @return revoked Boolean value to indicate if the revocation was successful.
    function revoke(
@@ -31,7 +33,7 @@ interface IExchangeModule {
 
    /// @dev Checks if there is a valid grant from granter to grantee for specified
    /// message type
-   /// @param grantee The contract address which has the Authorization.
+   /// @param grantee The account address which has the Authorization.
    /// @param granter The account address that grants an Authorization.
    /// @param method The message type URL of the methods for which the approval should be queried.
    /// @return allowed Boolean value to indicatie if the grant exists and is not expired

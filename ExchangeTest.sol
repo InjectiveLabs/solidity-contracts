@@ -55,15 +55,17 @@ contract ExchangeTest {
     /// behalf of the origin. 
     /// @param msgType The type of the message to approve.
     /// @param spendLimit The spend limit for the message type.
+    /// @param duration The time period for which the authorization is valid (in seconds).
     /// @return success Boolean value to indicate if the approval was successful.
     function approve(
         ExchangeTypes.MsgType msgType,
-        Cosmos.Coin[] memory spendLimit
+        Cosmos.Coin[] memory spendLimit,
+        uint256 duration
     ) external returns (bool success) {
         ExchangeTypes.MsgType[] memory methods = new ExchangeTypes.MsgType[](1);
         methods[0] = msgType;
 
-        try exchange.approve(address(this), methods, spendLimit) returns (bool approved) {
+        try exchange.approve(address(this), methods, spendLimit, duration) returns (bool approved) {
             return approved;
         } catch {
             revert("error approving msg with spend limit");
