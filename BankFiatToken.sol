@@ -26,7 +26,7 @@ contract FiatTokenV2_Inj is FiatTokenV2_2 {
         _initializedVersion = 4;
     }
 
-    /* 1. in FiatTokemV1 change the signature of mint() to: (rename to _mint and replace external with internal modifier)
+    /* 1. in FiatTokenV1 change the signature of mint() to: (rename to _mint and replace external with internal modifier)
     function _mint(address _to, uint256 _amount)
         internal
         whenNotPaused
@@ -43,7 +43,7 @@ contract FiatTokenV2_Inj is FiatTokenV2_2 {
         return super._mint(_to, _amount); // cal FiatTokenV1.mint()
     }
 
-    /* 2. in FiatTokemV1 change the signature of _transfer() to: (add virtual modifier)
+    /* 2. in FiatTokenV1 change the signature of _transfer() to: (add virtual modifier)
     function _transfer(
         address from,
         address to,
