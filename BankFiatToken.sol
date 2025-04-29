@@ -43,7 +43,21 @@ contract FiatTokenV2_Inj is FiatTokenV2_2 {
         return super._mint(_to, _amount); // cal FiatTokenV1.mint()
     }
 
-    /* 2. in FiatTokenV1 change the signature of _transfer() to: (add virtual modifier)
+    /* 2. in FiatTokenV1 change the signature of burn() to: (rename to _burn and replace external with internal modifier)
+    function _burn(uint256 _amount)
+        internal
+        whenNotPaused
+        onlyMinters
+        notBlacklisted(msg.sender)
+    */
+    function burn(uint256 _amount)
+        external
+    {
+        bank.burn(msg.sender, _amount);
+        super._burn(_amount); // cal FiatTokenV1.burn()
+    }
+
+    /* 3. in FiatTokenV1 change the signature of _transfer() to: (add virtual modifier)
     function _transfer(
         address from,
         address to,
