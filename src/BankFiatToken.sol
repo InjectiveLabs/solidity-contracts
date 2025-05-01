@@ -68,7 +68,7 @@ contract FiatTokenV2_Inj is FiatTokenV2_2 {
         address from,
         address to,
         uint256 value
-    ) internal override {
+    ) internal override returns (bool) {
         bank.transfer(from, to, value);
         return super._transfer(from, to, value);
     }
