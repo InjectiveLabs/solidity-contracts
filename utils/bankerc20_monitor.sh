@@ -1,12 +1,19 @@
-# listen for Transfer events and detect contracts that do not use bank precompile
+# Listen for Transfer events and detect contracts that do not use bank precompile.
+# It will print everything to stdout, only found vanilla contracts to stderr
+# and append only vanilla addresses to $DUMP_FILE
+# 
+# To use this as a notification daemon, just redirect stderr to your notification service.
 
 RPC_URL=https://k8s.testnet.evmix.json-rpc.injective.network
-INTERVAL=1 #seconds
+INTERVAL=10 #seconds
+DUMP_FILE="dump.txt"
 
 CHECKED_CONTRACTS=()
-VANILLA_CONTRACTS=()
 
-echoerr() { cat <<< "$@" 1>&2; }
+echoerr() {
+	cat <<< "$@" 1>&2;
+	cat <<< "$@"
+}
 
 req() { # (method, params)
 	curl -s -X POST --data '{"jsonrpc":"2.0","method":"'${1}'","params":['${2}'],"id":1}' -H "Content-Type: application/json" $RPC_URL
@@ -72,15 +79,12 @@ do
 			RESPONSE=$(check_res)
 			TOKEN_SYMBOL=$(decode_erc20_name $RESPONSE)
 
-			echo $'\n!!! VANILLA ERC20 !!!'
-			echo "Address: $(echo $CONTRACT_ADDRESS | tr -d '"')"
-			echo "Token name: ${TOKEN_NAME}"
-			echo $'Token symbol: '${TOKEN_SYMBOL}'\n\n'
-			VANILLA_CONTRACTS+=$CONTRACT_ADDRESS
-
-			echoerr "All vanilla contracts"
-			echoerr $VANILLA_CONTRACTS
-			echoerr $'\n'
+			echoerr "!!! VANILLA ERC20 !!!"
+			echoerr "Address: $(echo $CONTRACT_ADDRESS | tr -d '"')"
+			echoerr "Token name: ${TOKEN_NAME}"
+			echoerr "Token symbol: ${TOKEN_SYMBOL}"
+			
+			echo "$(echo $CONTRACT_ADDRESS | tr -d '"')" >> $DUMP_FILE
 		fi
 
 		CHECKED_CONTRACTS+=$CONTRACT_ADDRESS
@@ -88,13 +92,3 @@ do
 
 	sleep $INTERVAL
 done
-
-# all logs:
-# curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getFilterLogs","params":["'${FILTER_ID}'"],"id":1}' -H "Content-Type: application/json" https://k8s.testnet.evmix.json-rpc.injective.network | jq
-
-# only new logs:
-# curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getFilterChanges","params":["'${FILTER_ID}'"],"id":1}' -H "Content-Type: application/json" https://k8s.testnet.evmix.json-rpc.injective.network | jq
-
-2. if contract address is not checked yet, trace each tx for opcodes and look for JUMPI on 0x64
-
- curl -s -X POST --data '{"jsonrpc":"2.0","method":"debug_traceTransaction","params":["0x6207ee5f5bf49ce737c7f4432cb33786d89a3adf2951b9f66a45d43e59793227", {}],"id":1}' -H "Content-Type: application/json" https://k8s.testnet.evmix.json-rpc.injective.network | jq '.result.structLogs.[] | select(.op == "SLOAD").storage | to_entries.[] | select(.value == "0000000000000000000000000000000000000000000000000000000000000064")'
