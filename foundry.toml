@@ -5,3 +5,4 @@ libs = ["lib"]
 
 [rpc_endpoints]
 evmixt = "https://k8s.testnet.evmix.json-rpc.injective.network"
+devnet_evmixt = "https://devnet.json-rpc.injective.dev"
