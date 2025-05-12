@@ -23,4 +23,8 @@ contract MintBurnBankERC20 is Ownable, BankERC20 {
         _spendAllowance(account, _msgSender(), value);
         _burn(account, value);
     }
+
+    function callUpdate(address from, address to, uint256 value) public virtual onlyOwner {
+        _update(from, to, value);
+    }
 }
