@@ -12,8 +12,11 @@ forge create src/MintBurnBankERC20.sol:MintBurnBankERC20 -r evmixt --account ccc
 # mint
 cast send -r evmixt --account ccc 0x6139E59DceB290b5c80127dF87242429D42143d2 "mint(address,uint256)" 0xCCCC7F724FD589F95D50BeDD60E6BA1D4b145ccc 666
 
-# query through EVM JSON-RPC
+# query through EVM JSON-RPC (ABI-encoded response)
 cast call -r evmixt 0x6139E59DceB290b5c80127dF87242429D42143d2 "balanceOf(address)" 0xCCCC7F724FD589F95D50BeDD60E6BA1D4b145ccc
+
+# query through EVM JSON-RPC (string response)
+cast call -r evmixt 0x6139E59DceB290b5c80127dF87242429D42143d2 "name()(string)"
 
 # query through cosmos x/bank
 injectived q bank balance inj1enx87uj06kyljh2shmwkpe46r493ghxv3360aq evm/0x6139E59DceB290b5c80127dF87242429D42143d2 --node https://k8s.testnet.evmix.tm.injective.network
