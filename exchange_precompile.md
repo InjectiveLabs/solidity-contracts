@@ -123,7 +123,7 @@ contract ExchangeDemo {
 
 The following script shows how one might deploy and interact with this 
 smart-contract. For a full explanation of how to run this script please refer to
-the demo in the solidity-contracts repo. 
+the full [demo](demo/exchange/README.md) in the solidity-contracts repo. 
 
 ```sh
 #!/bin/sh
