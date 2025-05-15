@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >0.6.6;
+
+import "./Exchange.sol";
+import "./ExchangeTypes.sol";
+
+contract ExchangeDemo {
+    address constant exchangeContract = 0x0000000000000000000000000000000000000065;
+    IExchangeModule exchange = IExchangeModule(exchangeContract);
+
+    /***************************************************************************
+     * calling the precompile directly
+    ****************************************************************************/
+
+    // deposit funds into subaccount belonging to this contract
+    function deposit(
+        string calldata subaccountID,
+        string calldata denom,
+        uint256 amount
+    ) external returns (bool) {
+        return exchange.deposit(address(this), subaccountID, denom, amount);
+    }
+
+    // withdraw funds from a subaccount belonging to this contract
+    function withdraw(
+        string calldata subaccountID,
+        string calldata denom,
+        uint256 amount
+    ) external returns (bool) {
+         return exchange.withdraw(address(this), subaccountID, denom, amount);
+    }
+
+    function subaccountPositions(
+        string calldata subaccountID
+    ) external view returns (IExchangeModule.DerivativePosition[] memory positions) {
+        return exchange.subaccountPositions(subaccountID);
+    }
+
+    function createDerivativeLimitOrder(
+        IExchangeModule.DerivativeOrder calldata order
+    ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
+        try exchange.createDerivativeLimitOrder(address(this), order) returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory resp) {
+            return resp;
+        } catch {
+            revert("error creating derivative limit order");
+        }
+    }
+}
