@@ -14,8 +14,8 @@ contract ExchangeDemo {
 
     // deposit funds into subaccount belonging to this contract
     function deposit(
-        string memory subaccountID,
-        string memory denom,
+        string calldata subaccountID,
+        string calldata denom,
         uint256 amount
     ) external returns (bool) {
         return exchange.deposit(address(this), subaccountID, denom, amount);
@@ -23,10 +23,26 @@ contract ExchangeDemo {
 
     // withdraw funds from a subaccount belonging to this contract
     function withdraw(
-        string memory subaccountID,
-        string memory denom,
+        string calldata subaccountID,
+        string calldata denom,
         uint256 amount
     ) external returns (bool) {
          return exchange.withdraw(address(this), subaccountID, denom, amount);
+    }
+
+    function subaccountPositions(
+        string calldata subaccountID
+    ) external view returns (IExchangeModule.DerivativePosition[] memory positions) {
+        return exchange.subaccountPositions(subaccountID);
+    }
+
+    function createDerivativeLimitOrder(
+        IExchangeModule.DerivativeOrder calldata order
+    ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
+        try exchange.createDerivativeLimitOrder(address(this), order) returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory resp) {
+            return resp;
+        } catch {
+            revert("error creating derivative limit order");
+        }
     }
 }
