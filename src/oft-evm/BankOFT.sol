@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.20;
 
-import { BankERC20 } from "./BankERC20.sol";
+import { BankERC20 } from "../BankERC20.sol";
 import { IOFT, OFTCore } from "@layerzerolabs/oft-evm/contracts/OFTCore.sol";
 
 /**
