@@ -52,7 +52,7 @@ is used when setting up the node to add some accounts and derivative markets in
 the genesis file. 
 
 ```
-git clone -b release/v1.13.x-evm org-44571224@github.com:InjectiveLabs/injective-core.git
+git clone -b v1.16.0 https://github.com/InjectiveFoundation/injective-core 
 git clone org-44571224@github.com:InjectiveLabs/injective-local.git
 ```
 
