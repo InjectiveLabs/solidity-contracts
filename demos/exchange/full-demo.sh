@@ -49,7 +49,7 @@ injectived q bank balances \
     $contract_inj_address
 echo ""
 
-echo "4) Calling contract.depotit..."
+echo "4) Calling contract.deposit..."
 cast send \
     -r $ETH_URL \
     --account $USER \

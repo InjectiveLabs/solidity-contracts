@@ -72,7 +72,7 @@ with its own funds.
 
 ```
 // SPDX-License-Identifier: MIT
-pragma solidity >0.6.6;
+pragma solidity ^0.8.4;
 
 import "./Exchange.sol";
 import "./ExchangeTypes.sol";
@@ -123,7 +123,7 @@ contract ExchangeDemo {
 
 The following script shows how one might deploy and interact with this 
 smart-contract. For a full explanation of how to run this script please refer to
-the full [demo](demo/exchange/README.md) in the solidity-contracts repo. 
+the full [demo](demos/exchange/README.md) in the solidity-contracts repo. 
 
 ```sh
 #!/bin/sh
@@ -177,7 +177,7 @@ injectived q bank balances \
     $contract_inj_address
 echo ""
 
-echo "4) Calling contract.depotit..."
+echo "4) Calling contract.deposit..."
 cast send \
     -r $ETH_URL \
     --account $USER \
