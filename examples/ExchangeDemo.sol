@@ -18,7 +18,13 @@ contract ExchangeDemo {
         string calldata denom,
         uint256 amount
     ) external returns (bool) {
-        return exchange.deposit(address(this), subaccountID, denom, amount);
+        try exchange.deposit(address(this), subaccountID, denom, amount) returns (bool success) {
+            return success;
+        } catch Error(string memory reason) {
+            revert(string(abi.encodePacked("Deposit error: ", reason)));
+        } catch {
+            revert("Unknown error during deposit");
+        }
     }
 
     // withdraw funds from a subaccount belonging to this contract
@@ -27,7 +33,13 @@ contract ExchangeDemo {
         string calldata denom,
         uint256 amount
     ) external returns (bool) {
-         return exchange.withdraw(address(this), subaccountID, denom, amount);
+        try exchange.withdraw(address(this), subaccountID, denom, amount) returns (bool success) {
+            return success;
+        } catch Error(string memory reason) {
+            revert(string(abi.encodePacked("Withdraw error: ", reason)));
+        } catch {
+            revert("Unknown error during withdraw");
+        }
     }
 
     function subaccountPositions(
