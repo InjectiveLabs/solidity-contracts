@@ -17,7 +17,7 @@ fi
 echo ""
 
 echo "2) Creating contract..."
-contract_eth_address=$(forge create src/ExchangeDemo.sol:ExchangeDemo \
+contract_eth_address=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
