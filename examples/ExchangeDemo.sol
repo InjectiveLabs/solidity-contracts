@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >0.6.6;
+pragma solidity ^0.8.4;
 
-import "./Exchange.sol";
-import "./ExchangeTypes.sol";
+import "../src/Exchange.sol";
+import "../src/ExchangeTypes.sol";
 
 contract ExchangeDemo {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
