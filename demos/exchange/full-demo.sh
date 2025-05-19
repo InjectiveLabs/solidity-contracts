@@ -22,7 +22,11 @@ contract_eth_address=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
     --account $USER \
     --password $USER_PWD \
     --broadcast \
-    | awk -F ': ' '/Deployed/ {print $2}')
+    --legacy \
+    --gas-limit 100000000 \
+    --gas-price 10 \
+   | awk -F ': ' '/Deployed/ {print $2}')
+
 contract_inj_address=$(injectived q exchange inj-address-from-eth-address $contract_eth_address)
 contract_subaccount_id="$contract_eth_address"000000000000000000000001
 echo "eth address: $contract_eth_address"
@@ -35,7 +39,7 @@ yes $USER_PWD | injectived tx bank send \
     -y \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
-    --fees 50000inj \
+    --fees 500000inj \
     --broadcast-mode sync \
     $USER \
     $contract_inj_address \
@@ -54,10 +58,16 @@ cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --legacy \
+    --gas-limit 1000000 \
+    --gas-price 10 \
     $contract_eth_address \
     "deposit(string,string,uint256)" $contract_subaccount_id $QUOTE 1000000000
 echo ""
 
+#cast rpc inj_getTxHashByEthHash 0x30b74482e2f492f97eedd1381e69fa017b6fae667b63059e5265b1a6f45bddbe | sed -r 's/0x//' | xargs injectived q tx
+
+sleep 3
 echo "5) Querying contract deposits..."
 injectived q exchange deposits \
   --chain-id $CHAIN_ID \
@@ -71,6 +81,9 @@ cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --legacy \
+    --gas-limit 1000000 \
+    --gas-price 10 \
     $contract_eth_address \
     "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999
 echo ""
@@ -90,6 +103,9 @@ cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --legacy \
+    --gas-limit 1000000 \
+    --gas-price 10 \
     $contract_eth_address \
     "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
     '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)'

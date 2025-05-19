@@ -59,13 +59,13 @@ git clone org-44571224@github.com:InjectiveLabs/injective-local.git
 Setup the genenis file:
 ```
 cd injecive-core
-./setup.sh
+INJHOME="$(pwd)/.injectived" ./setup.sh
 ```
 
 Build and run `injectived`:
 ```
 make install
-./injectived.sh
+INJHOME="$(pwd)/.injectived" ./injectived.sh
 ```
 
 ## Run the demo
