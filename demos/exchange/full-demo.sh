@@ -6,27 +6,46 @@
 
 ################################################################################
 
+check_foundry_result() {
+    res=$1
+    
+    eth_tx_hash=$(echo $res | jq -r '.transactionHash')
+    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash | sed -r 's/0x//' | tr -d '"')
+
+    tx_receipt=$(injectived q tx $sdk_tx_hash --node $INJ_URL --output json)
+    code=$(echo $tx_receipt | jq -r '.code')
+    raw_log=$(echo $tx_receipt | jq -r '.raw_log')
+
+    if [ $code -ne 0 ]; then
+        echo "Error: Tx Failed. Code: $code, Log: $raw_log"
+        exit 1
+    fi   
+}
+
 echo "1) Importing user wallet..."
 if cast wallet list | grep -q $USER; then
     echo "Wallet $USER already exists. Skipping import."
 else
-   cast wallet import $USER \
-    --unsafe-password "$USER_PWD" \
-    --mnemonic "$USER_MNEMONIC"
+    cast wallet import $USER \
+        --unsafe-password "$USER_PWD" \
+        --mnemonic "$USER_MNEMONIC"
 fi
 echo ""
 
 echo "2) Creating contract..."
-contract_eth_address=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
+create_res=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
     --broadcast \
     --legacy \
-    --gas-limit 100000000 \
+    --gas-limit 10000000 \
     --gas-price 10 \
-   | awk -F ': ' '/Deployed/ {print $2}')
+    -vvvv \
+    --json)
+check_foundry_result "$create_res"
 
+contract_eth_address=$(echo $create_res | jq -r '.deployedTo')
 contract_inj_address=$(injectived q exchange inj-address-from-eth-address $contract_eth_address)
 contract_subaccount_id="$contract_eth_address"000000000000000000000001
 echo "eth address: $contract_eth_address"
@@ -54,18 +73,18 @@ injectived q bank balances \
 echo ""
 
 echo "4) Calling contract.deposit..."
-cast send \
+deposit_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --json \
     --legacy \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
-    "deposit(string,string,uint256)" $contract_subaccount_id $QUOTE 1000000000
+    "deposit(string,string,uint256)" $contract_subaccount_id $QUOTE 1000000000)
+check_foundry_result "$deposit_res"
 echo ""
-
-#cast rpc inj_getTxHashByEthHash 0x30b74482e2f492f97eedd1381e69fa017b6fae667b63059e5265b1a6f45bddbe | sed -r 's/0x//' | xargs injectived q tx
 
 sleep 3
 echo "5) Querying contract deposits..."
@@ -77,15 +96,17 @@ injectived q exchange deposits \
 echo ""
 
 echo "6) Calling contract.withdraw..."
-cast send \
+withdraw_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --json \
     --legacy \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
-    "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999
+    "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999)
+check_foundry_result "$withdraw_res"
 echo ""
 
 echo "7) Querying contract deposits..."
@@ -99,16 +120,18 @@ echo ""
 echo "8) Calling contract.createDerivativeLimitOrder..."
 price=10000
 margin=5000
-cast send \
+order_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --json \
     --legacy \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
     "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
-    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)'
+    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)')
+check_foundry_result "$order_res"
 echo ""
 
 echo "9) Querying contract orders..."
