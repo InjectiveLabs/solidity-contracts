@@ -28,7 +28,7 @@ To install:
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
-If this fails, you mind need to install Rust first:
+If this fails, you might need to install Rust first:
 
 ```
 rustup update stable
@@ -45,7 +45,7 @@ brew install grpcurl
 
 ### Injectived
 
-We provide the instruction to build from source and run a local `injectived` node.
+Build from source and run a local `injectived` node.
 
 Clone `injectived`: 
 
@@ -53,10 +53,10 @@ Clone `injectived`:
 git clone -b v1.16.0 https://github.com/InjectiveFoundation/injective-core 
 ```
 
-Setup the genenis file:
+Setup the genesis file:
 ```
-cd injecive-core
-INJHOME="$(pwd)/.injectived" ./setup.sh
+cd injective-core
+./setup.sh
 ```
 
 Build and run `injectived`:
@@ -68,5 +68,5 @@ INJHOME="$(pwd)/.injectived" ./injectived.sh
 ## Run the demo
 
 ```
-./full-demo.sh
+./demo.sh
 ```

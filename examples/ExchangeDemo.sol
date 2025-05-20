@@ -53,8 +53,10 @@ contract ExchangeDemo {
     ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
         try exchange.createDerivativeLimitOrder(address(this), order) returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory resp) {
             return resp;
+        } catch Error(string memory reason) {
+            revert(string(abi.encodePacked("CreateDerivativeLimitOrder error: ", reason)));
         } catch {
-            revert("error creating derivative limit order");
+            revert("Unknown error during createDerivativeLimitOrder");
         }
     }
 }
