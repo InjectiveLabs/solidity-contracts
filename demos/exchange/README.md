@@ -47,13 +47,10 @@ brew install grpcurl
 
 We provide the instruction to build from source and run a local `injectived` node.
 
-Clone `injectived` and `injective-local` in the same directory. `injective-local`
-is used when setting up the node to add some accounts and derivative markets in
-the genesis file. 
+Clone `injectived`: 
 
 ```
 git clone -b v1.16.0 https://github.com/InjectiveFoundation/injective-core 
-git clone org-44571224@github.com:InjectiveLabs/injective-local.git
 ```
 
 Setup the genenis file:
