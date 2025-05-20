@@ -43,6 +43,9 @@ create_res=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
     --gas-price 10 \
     -vvvv \
     --json)
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 check_foundry_result "$create_res"
 
 contract_eth_address=$(echo $create_res | jq -r '.deployedTo')
@@ -63,6 +66,9 @@ yes $USER_PWD | injectived tx bank send \
     $USER \
     $contract_inj_address \
     1000000000000$QUOTE
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 echo ""
 
 sleep 3
@@ -83,6 +89,9 @@ deposit_res=$(cast send \
     --gas-price 10 \
     $contract_eth_address \
     "deposit(string,string,uint256)" $contract_subaccount_id $QUOTE 1000000000)
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 check_foundry_result "$deposit_res"
 echo ""
 
@@ -106,6 +115,9 @@ withdraw_res=$(cast send \
     --gas-price 10 \
     $contract_eth_address \
     "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999)
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 check_foundry_result "$withdraw_res"
 echo ""
 
@@ -131,6 +143,9 @@ order_res=$(cast send \
     $contract_eth_address \
     "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
     '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)')
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 check_foundry_result "$order_res"
 echo ""
 
