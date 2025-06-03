@@ -12,29 +12,29 @@ abstract contract BankERC20 is ERC20 {
         bank.setMetadata(name_, symbol_, decimals_);
     }
 
-    function name() public view override returns (string memory) {
+    function name() public virtual view override returns (string memory) {
         string memory _name;
         (_name, ,) = bank.metadata(address(this));
         return _name;
     }
 
-    function symbol() public view override returns (string memory) {
+    function symbol() public virtual view override returns (string memory) {
         string memory _symbol;
         (, _symbol,) = bank.metadata(address(this));
         return _symbol;
     }
 
-    function decimals() public view override returns (uint8) {
+    function decimals() public virtual view override returns (uint8) {
         uint8 _decimals;
         (, , _decimals) = bank.metadata(address(this));
         return _decimals;
     }
 
-    function totalSupply() public view override returns (uint256) {
+    function totalSupply() public virtual view override returns (uint256) {
         return bank.totalSupply(address(this));
     }
 
-    function balanceOf(address account) public view override returns (uint256) {
+    function balanceOf(address account) public virtual view override returns (uint256) {
         return bank.balanceOf(address(this), account);
     }
 
