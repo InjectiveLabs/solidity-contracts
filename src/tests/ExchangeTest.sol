@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.6.6;
 
-import "./Exchange.sol";
-import "./ExchangeTypes.sol";
+import "../Exchange.sol";
+import "../ExchangeTypes.sol";
 
 contract ExchangeTest {
     address constant exchangeContract = 0x0000000000000000000000000000000000000065;
@@ -51,28 +51,7 @@ contract ExchangeTest {
      * calling the precompile via authz
     ****************************************************************************/
 
-    /// @dev Approves a message type, so that this contract can submit it on 
-    /// behalf of the origin. 
-    /// @param msgType The type of the message to approve.
-    /// @param spendLimit The spend limit for the message type.
-    /// @param duration The time period for which the authorization is valid (in seconds).
-    /// @return success Boolean value to indicate if the approval was successful.
-    function approve(
-        ExchangeTypes.MsgType msgType,
-        Cosmos.Coin[] memory spendLimit,
-        uint256 duration
-    ) external returns (bool success) {
-        ExchangeTypes.MsgType[] memory methods = new ExchangeTypes.MsgType[](1);
-        methods[0] = msgType;
-
-        try exchange.approve(address(this), methods, spendLimit, duration) returns (bool approved) {
-            return approved;
-        } catch {
-            revert("error approving msg with spend limit");
-        }
-    }
-
-       // A simple counter to be incremented
+    // A simple counter to be incremented
     uint256 public counter;
 
     //  depositTest1 is used ot test that our evm module is not affected by the
