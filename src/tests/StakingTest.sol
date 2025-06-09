@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >0.6.6;
 
-import "./Staking.sol";
+import "../Staking.sol";
 
 contract StakingTest {
     address constant stakingContract = 0x0000000000000000000000000000000000000066;
