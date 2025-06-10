@@ -8,7 +8,7 @@ abstract contract BankERC20 is ERC20 {
     address constant bankContract = 0x0000000000000000000000000000000000000064;
     IBankModule bank = IBankModule(bankContract);
 
-    constructor(string memory name_, string memory symbol_, uint8 decimals_) ERC20("","") { // parent ERC20 metadata is not used
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) payable ERC20("","") { // parent ERC20 metadata is not used
         bank.setMetadata(name_, symbol_, decimals_);
     }
 
