@@ -11,7 +11,7 @@ contract MintBurnBankERC20 is Ownable, BankERC20 {
         Ownable(initialOwner)
     {}
 
-    function mint(address to, uint256 amount) public virtual onlyOwner {
+    function mint(address to, uint256 amount) public virtual payable onlyOwner {
         _mint(to, amount);
     }
 
