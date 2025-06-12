@@ -9,17 +9,21 @@ interface IExchangeModule {
    * AUTHZ                                                                    * 
    ****************************************************************************/
    
+   /// @dev Authorization is a struct that contains the information about the
+   /// authorization granted to a grantee by a granter.
+   struct Authorization {
+      ExchangeTypes.MsgType method; // the message type URL of the method for which the authorization is granted
+      Cosmos.Coin[] spendLimit; // the spend limit
+      uint256 duration; // the time period for which the authorization is valid (in seconds)
+   }
+
    /// @dev Approves a list of Cosmos messages.
    /// @param grantee The account address which will be authorized to spend the origin's funds.
-   /// @param methods The message type URLs of the methods to approve.
-   /// @param spendLimit The spend limit for the methods.
-   /// @param duration The time period for which the authorization is valid (in seconds).
+   /// @param authorizations The list of authorizations to grant to the grantee.
    /// @return approved Boolean value to indicate if the approval was successful.
    function approve(
       address grantee,
-      ExchangeTypes.MsgType[] calldata methods,
-      Cosmos.Coin[] calldata spendLimit,
-      uint256 duration
+      Authorization[] calldata authorizations
    ) external returns (bool approved);
 
    /// @dev Revokes a list of Cosmos messages.
