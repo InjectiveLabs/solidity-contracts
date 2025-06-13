@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import {Cosmos} from "./CosmosTypes.sol";
 
 interface IStakingModule {
-    /// @dev Defines a method for performing a delegation of coins from a delegator to a validator.
+    /// @dev Defines a method for performing a delegation of coins from the to a validator.
     /// @param validatorAddress The address of the validator
     /// @param amount The amount of the bond denomination to be delegated to the validator.
     /// This amount should use the bond denomination precision stored in the bank metadata.
@@ -14,7 +14,7 @@ interface IStakingModule {
         uint256 amount
     ) external returns (bool success);
 
-    /// @dev Defines a method for performing an undelegation from a delegate and a validator.
+    /// @dev Defines a method for the caller to undelegate funds from a validator.
     /// @param validatorAddress The address of the validator
     /// @param amount The amount of the bond denomination to be undelegated from the validator.
     /// This amount should use the bond denomination precision stored in the bank metadata.
@@ -25,7 +25,7 @@ interface IStakingModule {
     ) external returns (bool success);
 
     /// @dev Defines a method for performing a redelegation
-    /// of coins from a delegator and source validator to a destination validator.
+    /// of coins from the caller and source validator to a destination validator.
     /// @param validatorSrcAddress The validator from which the redelegation is initiated
     /// @param validatorDstAddress The validator to which the redelegation is destined
     /// @param amount The amount of the bond denomination to be redelegated to the validator
