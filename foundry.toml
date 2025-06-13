@@ -14,3 +14,4 @@ remappings = [
 [rpc_endpoints]
 evmixt = "https://k8s.testnet.evmix.json-rpc.injective.network"
 devnet = "https://devnet.json-rpc.injective.dev"
+testnet = "https://k8s.testnet.json-rpc.injective.network"
