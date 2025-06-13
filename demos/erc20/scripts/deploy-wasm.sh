@@ -40,7 +40,7 @@ fi
 TXHASH=$(echo $store_res | jq -r '.txhash')
 echo "Transaction hash: $TXHASH"
 
-sleep 2
+sleep 3
 
 echo "\n### QUERYING TRANSACTION ###"
 echo injectived q tx $TXHASH \
@@ -105,7 +105,7 @@ fi
 TXHASH=$(echo $instantiate_res | jq -r '.txhash')
 echo "Transaction hash: $TXHASH"
 
-sleep 2
+sleep 3
 
 echo "\n### QUERYING TRANSACTION ###"
 echo injectived q tx $TXHASH \

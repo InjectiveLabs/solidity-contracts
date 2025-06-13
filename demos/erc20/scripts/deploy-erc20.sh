@@ -13,6 +13,7 @@ echo forge create src/FixedSupplyBankERC20.sol:FixedSupplyBankERC20 \
     --broadcast \
     --gas-limit 10000000 \
     --gas-price 10 \
+    --value 1000000000000000000 \
     --legacy \
     -vvvv \
     --json \
@@ -26,6 +27,7 @@ create_res=$(forge create src/FixedSupplyBankERC20.sol:FixedSupplyBankERC20 \
     --broadcast \
     --gas-limit 10000000 \
     --gas-price 10 \
+    --value 1000000000000000000 \
     --legacy \
     -vvvv \
     --json \
