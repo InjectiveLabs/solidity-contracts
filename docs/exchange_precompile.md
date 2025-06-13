@@ -46,7 +46,7 @@ In this case, the smart contract must be **authorized** by the user (`userAddres
 To authorize a contract to perform specific actions:
 
 ```solidity
-exchange.approve(grantee, msgTypes, spendLimit, duration);
+exchange.approve(grantee, authorizations);
 ```
 
 To revoke that authorization:
