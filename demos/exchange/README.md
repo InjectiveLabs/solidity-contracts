@@ -14,7 +14,6 @@ This demo goes through the following steps
 6) Check contract deposits again to check the withdrawal worked
 6) Call the smart-contract to create a derivative limit order using contract's deposit
 7) Check that the order was created
-6) Check position via contract query (will be empty because order is not matched)
 
 ## Requirements
 
