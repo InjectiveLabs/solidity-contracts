@@ -61,7 +61,14 @@ echo "Contract INJ address: $contract_inj_address"
 echo "Denom: $denom"
 echo ""
 
-echo "3) Mint 666..."
+echo "3) Sending 1 INJ to the contract..."
+yes 12345678 | injectived tx bank send user1 $contract_inj_address 1000000000000000000inj --gas 1000000 --gas-prices 10inj --chain-id injective-1 --yes
+echo "OK"
+echo ""
+
+sleep 3
+
+echo "3) Minting 666..."
 mint_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
@@ -70,6 +77,7 @@ mint_res=$(cast send \
     --legacy \
     --gas-limit 1000000 \
     --gas-price 10 \
+    --value 1000000000000000000 \
     $contract_eth_address \
     "mint(address,uint256)" $user_eth_address 666)
 if [ $? -ne 0 ]; then
