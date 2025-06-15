@@ -1,9 +1,9 @@
-# ERC20 Single Token Representation Demo
+# ERC20 Multi-VM Token Standard Demo
 
 This demo shows how to deploy and interact with our `MintBurnBankERC20` contract,
 which is backed entirely by native chain balances.
 
-This demo goes through the following steps
+This demo goes through the following steps:
 
 1) deploy `MintBurnBankERC20` contract
 2) Mint 666 tokens

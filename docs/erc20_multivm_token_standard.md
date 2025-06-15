@@ -1,6 +1,6 @@
-# ERC20 and Multi-Token Standard on Injective
+# ERC20 and Multi-VM Token Standard on Injective
 
-Injective implements its multi-token standard for ERC-20 tokens using 
+Injective implements its multi-vm token standard (MTS) for ERC-20 tokens using 
 the Bank precompile, which connects EVM-based smart contracts to the native 
 `x/bank` module. This model eliminates double-accounting and enables seamless 
 interoperability between the EVM and the native chain state.

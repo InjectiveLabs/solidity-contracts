@@ -4,11 +4,11 @@ This repository contains a collection of Solidity contracts that can be used to 
 
 Examples for how to use these contracts can be found in the [demos](demos) directory. The repo itself is a Foundry project, so you can use the `forge` command to compile and deploy the contracts. Also, can be included in your own Foundry project as a dependency.
 
-### ERC20 Multi-Token Standard (Bank Precompile)
+### ERC20 Multi-VM Token Standard (Bank Precompile)
 
-Injective implements its multi-token standard for ERC-20 tokens using the Bank precompile, which connects EVM-based smart contracts to the native `x/bank` module. This eliminates double-accounting and enables seamless interoperability between the EVM and native chain state. The standard includes ready-to-use contracts like `BankERC20`, `FixedSupplyBankERC20`, and `MintBurnBankERC20`.
+Injective implements its multi-vm token standard (MTS) for ERC-20 tokens using the Bank precompile, which connects EVM-based smart contracts to the native `x/bank` module. This eliminates double-accounting and enables seamless interoperability between the EVM and native chain state. The standard includes ready-to-use contracts like `BankERC20`, `FixedSupplyBankERC20`, and `MintBurnBankERC20`.
 
-For more details, see the [ERC20 Multi-Token Standard documentation](docs/erc20_multi_token_standard.md) and try out the [ERC20 demo](demos/erc20/README.md).
+For more details, see the [ERC20 Multi-VM Token Standard documentation](docs/erc20_multivm_token_standard.md) and try out the [ERC20 demo](demos/erc20/README.md).
 
 
 ### Exchange Precompile
