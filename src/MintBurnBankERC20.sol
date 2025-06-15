@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MintBurnBankERC20 is Ownable, BankERC20 {
 
-    constructor(address initialOwner, string memory name_, string memory symbol_, uint8 decimals_)
+    constructor(address initialOwner, string memory name_, string memory symbol_, uint8 decimals_) payable
         BankERC20(name_, symbol_, decimals_)
         Ownable(initialOwner)
     {}

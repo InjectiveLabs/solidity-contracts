@@ -13,7 +13,7 @@ check_foundry_result() {
     code=$(echo $tx_receipt | jq -r '.code')
     raw_log=$(echo $tx_receipt | jq -r '.raw_log')
 
-    if [ $code -ne 0 ]; then
+    if [ -n "$code" ] && [ "$code" -ne 0 ]; then
         echo "Error: Tx Failed. Code: $code, Log: $raw_log"
         exit 1
     fi   

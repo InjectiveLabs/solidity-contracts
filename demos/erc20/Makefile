@@ -7,6 +7,12 @@ add-keys:
 deploy-erc20:
 	./scripts/deploy-erc20.sh
 
+deploy-erc20-mintburn:
+	./scripts/deploy-erc20-mintburn.sh
+
+mint-erc20:
+	./scripts/mint-erc20.sh
+
 balance1-cast:
 	./scripts/erc20-balance-user1.sh
 
