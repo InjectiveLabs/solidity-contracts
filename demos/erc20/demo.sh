@@ -45,6 +45,7 @@ create_res=$(forge create src/MintBurnBankERC20.sol:MintBurnBankERC20 \
     --legacy \
     --gas-limit 10000000 \
     --gas-price 10 \
+    --value 1000000000000000000 \
     -vvvv \
     --json \
     --constructor-args $user_eth_address "DemoMintBurnERC20" "DMB" 18) 
@@ -61,7 +62,7 @@ echo "Contract INJ address: $contract_inj_address"
 echo "Denom: $denom"
 echo ""
 
-echo "3) Mint 666..."
+echo "3) Minting 666..."
 mint_res=$(cast send \
     -r $ETH_URL \
     --account $USER \

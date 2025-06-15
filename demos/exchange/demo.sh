@@ -155,11 +155,3 @@ grpcurl -plaintext \
     $GRPC_URL \
     injective.exchange.v1beta1.Query/SubaccountOrders
 echo ""
-
-echo "10) Call contract.subaccountPositions..."
-cast call \
-    -r $ETH_URL \
-    $contract_eth_address \
-    "subaccountPositions(string)" $contract_subaccount_id \
-    | xargs cast decode-abi "subaccountPositions(string)(IExchangeModule.DerivativePosition[])"
-echo ""
