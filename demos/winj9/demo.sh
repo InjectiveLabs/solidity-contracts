@@ -30,10 +30,14 @@ else
         --unsafe-password "$USER_PWD" \
         --mnemonic "$USER_MNEMONIC"
 fi
+user_inj_address=$(yes $USER_PWD | injectived keys show -a $USER)
+user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
+echo "User INJ address: $user_inj_address"
+echo "User ETH address: $user_eth_address"
 echo ""
 
 echo "2) Creating contract..."
-create_res=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
+create_res=$(forge create src/WINJ9.sol:WINJ9 \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
@@ -41,8 +45,10 @@ create_res=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
     --legacy \
     --gas-limit 10000000 \
     --gas-price 10 \
+    --value 1000000000000000000 \
     -vvvv \
-    --json)
+    --json \
+    --constructor-args "Wrapped INJ" "WINJ" 18) 
 if [ $? -ne 0 ]; then
     exit 1
 fi
@@ -50,36 +56,45 @@ check_foundry_result "$create_res"
 
 contract_eth_address=$(echo $create_res | jq -r '.deployedTo')
 contract_inj_address=$(injectived q exchange inj-address-from-eth-address $contract_eth_address)
-contract_subaccount_id="$contract_eth_address"000000000000000000000001
-echo "eth address: $contract_eth_address"
-echo "inj address: $contract_inj_address"
+denom="erc20:$contract_eth_address"
+echo "Contract ETH address: $contract_eth_address"
+echo "Contract INJ address: $contract_inj_address"
+echo "Denom: $denom"
 echo ""
 
-echo "3) Funding contract..."
-# send 100 * 10^18 inj to the contract
-yes $USER_PWD | injectived tx bank send \
-    -y \
-    --chain-id $CHAIN_ID \
-    --node $INJ_URL \
-    --fees 500000inj \
-    --broadcast-mode sync \
-    $USER \
-    $contract_inj_address \
-    1000000000000$QUOTE
+echo "3) Depositing 100 INJ..."
+mint_res=$(cast send \
+    -r $ETH_URL \
+    --account $USER \
+    --password $USER_PWD \
+    --json \
+    --legacy \
+    --gas-limit 1000000 \
+    --gas-price 10 \
+    --value 100000000000000000000 \
+    $contract_eth_address \
+    "deposit()")
 if [ $? -ne 0 ]; then
     exit 1
 fi
+check_foundry_result "$mint_res"
+echo "OK"
 echo ""
 
+# Query balances through cosmos x/bank
+echo "4) Querying balances through cosmos x/bank..."
 sleep 3
 injectived q bank balances \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
-    $contract_inj_address
+    --output json \
+    $user_inj_address \
+    | jq -r '.balances[] | select(.denom == "'$denom'" or .denom == "inj") | "\(.denom): \(.amount)"'
 echo ""
 
-echo "4) Calling contract.deposit..."
-deposit_res=$(cast send \
+# Transfer
+echo "6) Transfer 5 WINJ..."
+transfer_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
@@ -88,24 +103,28 @@ deposit_res=$(cast send \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
-    "deposit(string,string,uint256)" $contract_subaccount_id $QUOTE 1000000000)
+    "transfer(address,uint256)" 0x0b3D624F163F7135E1C5A7a777133e4126B96246 5000000000000000000)
 if [ $? -ne 0 ]; then
     exit 1
 fi
-check_foundry_result "$deposit_res"
+check_foundry_result "$transfer_res"
+echo "OK"
 echo ""
 
+
+# Query balances through cosmos x/bank
+echo "7) Querying balances through cosmos x/bank..."
 sleep 3
-echo "5) Querying contract deposits..."
-injectived q exchange deposits \
-  --chain-id $CHAIN_ID \
-  --node $INJ_URL \
-  $contract_inj_address \
-  1
+injectived q bank balances \
+    --chain-id $CHAIN_ID \
+    --node $INJ_URL \
+    --output json \
+    $user_inj_address \
+    | jq -r '.balances[] | select(.denom == "'$denom'" or .denom == "inj") | "\(.denom): \(.amount)"'
 echo ""
 
-echo "6) Calling contract.withdraw..."
-withdraw_res=$(cast send \
+echo "8) Withdraw 50 WINJ..."
+mint_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
@@ -114,44 +133,21 @@ withdraw_res=$(cast send \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
-    "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999)
+    "withdraw(uint256)" 50000000000000000000)
 if [ $? -ne 0 ]; then
     exit 1
 fi
-check_foundry_result "$withdraw_res"
+check_foundry_result "$mint_res"
+echo "OK"
 echo ""
 
-echo "7) Querying contract deposits..."
-injectived q exchange deposits \
-  --chain-id $CHAIN_ID \
-  --node $INJ_URL \
-  $contract_inj_address \
-  1
-echo ""
-
-echo "8) Calling contract.createDerivativeLimitOrder..."
-price=10000
-margin=5000
-order_res=$(cast send \
-    -r $ETH_URL \
-    --account $USER \
-    --password $USER_PWD \
-    --json \
-    --legacy \
-    --gas-limit 1000000 \
-    --gas-price 10 \
-    $contract_eth_address \
-    "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
-    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)')
-if [ $? -ne 0 ]; then
-    exit 1
-fi
-check_foundry_result "$order_res"
-echo ""
-
-echo "9) Querying contract orders..."
-grpcurl -plaintext \
-    -d '{"subaccount_id":"'$contract_subaccount_id'", "market_id":"'$MARKET_ID'"}' \
-    $GRPC_URL \
-    injective.exchange.v1beta1.Query/SubaccountOrders
+# Query balances through cosmos x/bank
+echo "9) Querying balances through cosmos x/bank..."
+sleep 3
+injectived q bank balances \
+    --chain-id $CHAIN_ID \
+    --node $INJ_URL \
+    --output json \
+    $user_inj_address \
+    | jq -r '.balances[] | select(.denom == "'$denom'" or .denom == "inj") | "\(.denom): \(.amount)"'
 echo ""

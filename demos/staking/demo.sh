@@ -31,9 +31,14 @@ else
         --mnemonic "$USER_MNEMONIC"
 fi
 echo ""
+user_inj_address=$(yes $USER_PWD | injectived keys show -a $USER)
+user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
+echo "User INJ address: $user_inj_address"
+echo "User ETH address: $user_eth_address"
+echo ""
 
 echo "2) Creating contract..."
-create_res=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
+create_res=$(forge create src/tests/StakingTest.sol:StakingTest \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
@@ -65,7 +70,7 @@ yes $USER_PWD | injectived tx bank send \
     --broadcast-mode sync \
     $USER \
     $contract_inj_address \
-    1000000000000$QUOTE
+    100000000000000000000inj
 if [ $? -ne 0 ]; then
     exit 1
 fi
@@ -78,8 +83,12 @@ injectived q bank balances \
     $contract_inj_address
 echo ""
 
-echo "4) Calling contract.deposit..."
-deposit_res=$(cast send \
+validator=$(injectived q staking validators | awk '/operator_address:/ {print $2}')
+echo "validator: $validator"
+echo ""
+
+echo "4) Calling contract.delegate..."
+delegate_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
@@ -88,23 +97,32 @@ deposit_res=$(cast send \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
-    "deposit(string,string,uint256)" $contract_subaccount_id $QUOTE 1000000000)
+    "delegate(string,uint256)" $validator  $DELEGATION_AMOUNT)
 if [ $? -ne 0 ]; then
     exit 1
 fi
-check_foundry_result "$deposit_res"
+check_foundry_result "$delegate_res"
 echo ""
 
-sleep 3
-echo "5) Querying contract deposits..."
-injectived q exchange deposits \
-  --chain-id $CHAIN_ID \
-  --node $INJ_URL \
-  $contract_inj_address \
-  1
+sleep 2
+
+echo "5) Querying contract delegations through staking module..."
+injectived q staking delegation \
+    --chain-id $CHAIN_ID \
+    --node $INJ_URL \
+    $contract_inj_address \
+    $validator
 echo ""
 
-echo "6) Calling contract.withdraw..."
+echo "6) Querying contract delegations through staking precompile..."
+cast call \
+    -r $ETH_URL \
+    $contract_eth_address \
+    "delegation(address,string)" $contract_eth_address $validator \
+    | xargs cast decode-abi "delegation(address,string)(uint256,(uint256,string))"
+echo ""
+
+echo "7) Calling contract.undelegate..."
 withdraw_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
@@ -114,25 +132,23 @@ withdraw_res=$(cast send \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
-    "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999)
+    "undelegate(string,uint256)" $validator 25000000000000000000)
 if [ $? -ne 0 ]; then
     exit 1
 fi
 check_foundry_result "$withdraw_res"
 echo ""
 
-echo "7) Querying contract deposits..."
-injectived q exchange deposits \
-  --chain-id $CHAIN_ID \
-  --node $INJ_URL \
-  $contract_inj_address \
-  1
+echo "8) Querying contract undelegations through staking module..."
+injectived q staking delegation \
+    --chain-id $CHAIN_ID \
+    --node $INJ_URL \
+    $contract_inj_address \
+    $validator
 echo ""
 
-echo "8) Calling contract.createDerivativeLimitOrder..."
-price=10000
-margin=5000
-order_res=$(cast send \
+echo "9) Calling contract.withdrawDelegatorRewards..."
+withdraw_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
@@ -141,17 +157,17 @@ order_res=$(cast send \
     --gas-limit 1000000 \
     --gas-price 10 \
     $contract_eth_address \
-    "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
-    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)')
+    "withdrawDelegatorRewards(string)" $validator)
 if [ $? -ne 0 ]; then
     exit 1
 fi
-check_foundry_result "$order_res"
+check_foundry_result "$withdraw_res"
 echo ""
 
-echo "9) Querying contract orders..."
-grpcurl -plaintext \
-    -d '{"subaccount_id":"'$contract_subaccount_id'", "market_id":"'$MARKET_ID'"}' \
-    $GRPC_URL \
-    injective.exchange.v1beta1.Query/SubaccountOrders
+echo "10) Querying contract balance again..."
+injectived q bank balances \
+    --chain-id $CHAIN_ID \
+    --node $INJ_URL \
+    $contract_inj_address
 echo ""
+

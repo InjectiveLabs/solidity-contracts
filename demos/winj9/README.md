@@ -1,19 +1,17 @@
-# Exchange Precompile Demo
+# WINJ9 Demo
 
-This demo shows how to write a smart-contract that uses the exchange precompile, 
-and how this smart-contract can be deployed and called using commonly used tools 
-like `forge` and `cast`.
+This demo shows how to deploy and interact with our `WINJ9` contract,
+which is backed entirely by native chain balances.
 
-This demo goes through the following steps
+This demo goes through the following steps:
 
-1) deploy `ExchangeDemo` contract
-2) Fund the contract account with some USDT
-3) Call the smart-contract to deposit some USDT into the contract's subaccount
-4) Check contract deposits via contract query
-5) Call the smart-contract to withdraw some USDT from the contract's subaccount
-6) Check contract deposits again to check the withdrawal worked
-6) Call the smart-contract to create a derivative limit order using contract's deposit
-7) Check that the order was created
+1) Deploy `WINJ9` contract
+2) Deposit 100 INJ
+3) Check that we received 100 WINJ
+4) Transfer 5 WINJ
+5) Check balance update
+6) Withdraw 50 WINJ
+7) Check that we received 50 INJ
 
 ## Requirements
 

@@ -135,7 +135,7 @@ contract ExchangeDemo {
 }
 ```
 
-Please refer to the [demo](demos/exchange/README.md) to see how to build, deploy,
+Please refer to the [demo](../demos/exchange/README.md) to see how to build, deploy,
 and interact with this smart-contract.
 
 ## Conclusion
