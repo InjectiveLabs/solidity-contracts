@@ -1,0 +1,17 @@
+{
+  "name": "non-eip155-signer",
+  "version": "1.0.0",
+  "description": "Utility for signing Ethereum transactions without EIP-155 chain ID",
+  "private": true,
+  "main": "main.js",
+  "bin": {
+    "non-eip155-signer": "./main.js"
+  },
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "ethereumjs-util": "^7.1.5",
+    "rlp": "^3.0.0"
+  }
+}
