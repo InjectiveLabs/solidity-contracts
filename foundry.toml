@@ -1,17 +1,16 @@
 [profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
 evm_version = "shanghai"
+libs = ["lib"]
+out = "out"
+src = "src"
 
 remappings = [
-    '@layerzerolabs/oft-evm/=lib/devtools/packages/oft-evm/',
-    '@layerzerolabs/oapp-evm/=lib/devtools/packages/oapp-evm/',
-    '@layerzerolabs/lz-evm-protocol-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/protocol',
-    '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
+  '@layerzerolabs/oft-evm/=lib/devtools/packages/oft-evm/',
+  '@layerzerolabs/oapp-evm/=lib/devtools/packages/oapp-evm/',
+  '@layerzerolabs/lz-evm-protocol-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/protocol',
+  '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
 ]
 
 [rpc_endpoints]
-evmixt = "https://k8s.testnet.evmix.json-rpc.injective.network"
 devnet = "https://devnet.json-rpc.injective.dev"
 testnet = "https://k8s.testnet.json-rpc.injective.network"
