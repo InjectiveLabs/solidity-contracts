@@ -135,8 +135,62 @@ contract ExchangeDemo {
 }
 ```
 
-Please refer to the [demo](../demos/exchange/README.md) to see how to build, deploy,
+Please refer to the [demo](../demos/exchange-direct/README.md) to see how to build, deploy,
 and interact with this smart-contract.
+
+## Example: Proxy Access
+
+The `ExchangeProxy` contract uses the Proxy Access method to place a derivative
+limit order on behalf of another account.
+
+Before the contract can place the order on behalf of the trader, the trader must
+first authorize the contract to do so by calling the `approve` method.
+
+Please refer to the [authz demo](..demos/exchange-proxy/demo.sh) to see how to
+call the `approve` method of the precompile.
+
+```
+// SPDX-License-Identifier: MIT
+pragma solidity >0.6.6;
+
+import "../Exchange.sol";
+import "../CosmosTypes.sol";
+import "../ExchangeTypes.sol";
+
+contract ExchangeProxy {
+    address constant exchangeContract = 0x0000000000000000000000000000000000000065;
+    IExchangeModule exchange = IExchangeModule(exchangeContract);
+
+    /// @dev Creates a derivative limit order on behalf of the specified sender. 
+    /// It will revert with an error if this smart-contract doesn't have a grant 
+    /// from the sender to perform this action on their behalf.
+    /// @param sender The address of the sender.
+    /// @param order The derivative order to create.
+    /// @return response The response from the createDerivativeLimitOrder call.
+    function createDerivativeLimitOrder(
+        address sender,
+        IExchangeModule.DerivativeOrder calldata order
+    ) external returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory response) {
+        try exchange.createDerivativeLimitOrder(sender, order) returns (IExchangeModule.CreateDerivativeLimitOrderResponse memory resp) {
+            return resp;
+        } catch {
+            revert("error creating derivative limit order");
+        }
+    }
+
+    function queryAllowance(
+        address grantee,
+        address granter, 
+        ExchangeTypes.MsgType msgType
+    ) external view returns (bool allowed) {
+        try exchange.allowance(grantee, granter, msgType) returns (bool isAllowed) {
+            return isAllowed;
+        } catch {
+            revert("error querying allowance");
+        }
+    }
+}
+```
 
 ## Conclusion
 

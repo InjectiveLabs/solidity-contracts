@@ -37,10 +37,10 @@ create_res=$(forge create examples/ExchangeDemo.sol:ExchangeDemo \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --gas-limit $GAS_LIMIT \
+    --gas-price $GAS_PRICE \
     --broadcast \
     --legacy \
-    --gas-limit 10000000 \
-    --gas-price 10 \
     -vvvv \
     --json)
 if [ $? -ne 0 ]; then
@@ -83,10 +83,10 @@ deposit_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --gas-limit $GAS_LIMIT \
+    --gas-price $GAS_PRICE \
     --json \
     --legacy \
-    --gas-limit 1000000 \
-    --gas-price 10 \
     $contract_eth_address \
     "deposit(string,string,uint256)" $contract_subaccount_id $QUOTE 1000000000)
 if [ $? -ne 0 ]; then
@@ -109,10 +109,10 @@ withdraw_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --gas-limit $GAS_LIMIT \
+    --gas-price $GAS_PRICE \
     --json \
     --legacy \
-    --gas-limit 1000000 \
-    --gas-price 10 \
     $contract_eth_address \
     "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999)
 if [ $? -ne 0 ]; then
@@ -136,10 +136,10 @@ order_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
+    --gas-limit $GAS_LIMIT \
+    --gas-price $GAS_PRICE \
     --json \
     --legacy \
-    --gas-limit 1000000 \
-    --gas-price 10 \
     $contract_eth_address \
     "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
     '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)')
