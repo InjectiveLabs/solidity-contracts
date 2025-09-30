@@ -1,0 +1,27 @@
+{ 
+  "denom": "erc20:0xd574dC2B3D893De5b434eA5b8631d49363A7f36e",
+  "evm_hook": "0x71cf504350e07fAf11990137F9ca9239F302c4BF",
+  "role_permissions": [ 
+    {
+      "name": "EVERYONE",
+      "role_id": 0,
+      "permissions": 10 
+    },
+    {
+      "name": "admin",
+      "role_id": 1,
+      "permissions": 2013265920
+    },
+    {
+      "name": "user",
+      "role_id": 2,
+      "permissions": 15
+    }
+  ],
+  "actor_roles": [
+    {
+      "actor": "inj1cml96vmptgw99syqrrz8az79xer2pcgp0a885r",
+      "roles": ["admin"]
+    }
+  ]
+}
