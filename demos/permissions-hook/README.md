@@ -7,14 +7,14 @@ This demo goes through the following steps:
 
 1) Deploy `MintBurnBankERC20` contract (token contract)
 2) Deploy `RestrictSpecificAddressHook` contract (permissions hook)
-3) Create a permissions namespace linking the token to the hook 
-    (only the creator of the token can send this message)
-4) Mint 666 tokens to demonstrate initial balance
-5) Query balances through x/bank and EVM JSON-RPC
-6) Transfer 55 tokens to an authorized address (should succeed)
-7) Query balances to verify authorized transfer
-8) Transfer 88 tokens to an unauthorized address (should be blocked by hook)
-9) Query final balances to verify restriction enforcement
+3) Create a permissions namespace from unauthorized user (should fail - demonstrates access control)
+4) Create a permissions namespace from token owner (should succeed - linking the token to the hook)
+5) Mint 666 tokens to demonstrate initial balance
+6) Query balances through x/bank and EVM JSON-RPC
+7) Transfer 55 tokens to an authorized address (should succeed)
+8) Query balances to verify authorized transfer
+9) Transfer 88 tokens to an unauthorized address (should be blocked by hook)
+10) Query final balances to verify restriction enforcement
 
 
 ## Requirements

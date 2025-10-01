@@ -22,6 +22,33 @@ check_foundry_result() {
     fi   
 }
 
+check_injectived_result() {
+    res=$1
+    should_fail=$2
+
+    # Extract transaction hash and check result
+    tx_hash=$(echo $res | jq -r '.txhash')
+
+    sleep 3
+
+    # Check transaction result
+    tx_result=$(injectived q tx $tx_hash --node $INJ_URL --output json)
+    code=$(echo $tx_result | jq -r '.code')
+    raw_log=$(echo $tx_result | jq -r '.raw_log')
+
+    if [ $code -ne 0 ]; then
+        echo "Error: Tx Failed. Code: $code, Log: $raw_log"
+        if [ "$should_fail" = "false" ]; then 
+            exit 1
+        fi
+    fi
+
+    if [ "$should_fail" = "true" ] && [ $code -eq 0 ]; then
+        echo "Tx was expected to fail but succeeded"
+        exit 1
+    fi
+}
+
 echo "1) Importing user wallet..."
 if cast wallet list | grep -q $USER; then
     echo "Wallet $USER already exists. Skipping import."
@@ -84,20 +111,34 @@ echo "Hook ETH address: $hook_eth_address"
 echo "Hook INJ address: $hook_inj_address"
 echo ""
 
-echo "4) Creating permissions namespace..."
-
 # Fill the namespace template with actual values
 sed -e "s/\[DENOM\]/$denom/g" \
     -e "s/\[EVM_HOOK\]/$hook_eth_address/g" \
     -e "s/\[ADMIN\]/$user_inj_address/g" \
     namespace_template.json > namespace_filled.json
 
-echo "Filled namespace configuration:"
-cat namespace_filled.json
-echo ""
 
 # Create the namespace using the filled template
-echo "Creating namespace with injectived..."
+echo "4) Creating namespace from unauthorized user (SHOULD FAIL)..."
+create_namespace_res=$(echo 12345678 | injectived tx permissions create-namespace \
+    --from user2 \
+    --chain-id $CHAIN_ID \
+    --node $INJ_URL \
+    --gas 300000 \
+    --fees 500000inj \
+    --broadcast-mode sync \
+    --yes \
+    --output json \
+    namespace_filled.json)
+if [ $? -ne 0 ]; then
+    echo "Error creating namespace: $create_namespace_res"
+    exit 1
+fi
+check_injectived_result "$create_namespace_res" true
+echo "Failed as expected"
+echo ""
+
+echo "4 bis) Creating namespace from owner of ERC20 token (SHOULD SUCCEED)..."
 create_namespace_res=$(echo 12345678 | injectived tx permissions create-namespace \
     --from $USER \
     --chain-id $CHAIN_ID \
@@ -108,31 +149,12 @@ create_namespace_res=$(echo 12345678 | injectived tx permissions create-namespac
     --yes \
     --output json \
     namespace_filled.json)
-
 if [ $? -ne 0 ]; then
     echo "Error creating namespace: $create_namespace_res"
     exit 1
 fi
-
-# Extract transaction hash and check result
-namespace_tx_hash=$(echo $create_namespace_res | jq -r '.txhash')
-echo "Namespace creation transaction hash: $namespace_tx_hash"
-
-# Wait for transaction to be included
-echo "Waiting for transaction to be included..."
-sleep 5
-
-# Check transaction result
-namespace_tx_result=$(injectived q tx $namespace_tx_hash --node $INJ_URL --output json)
-namespace_code=$(echo $namespace_tx_result | jq -r '.code')
-namespace_raw_log=$(echo $namespace_tx_result | jq -r '.raw_log')
-
-if [ $namespace_code -ne 0 ]; then
-    echo "Error: Namespace creation failed. Code: $namespace_code, Log: $namespace_raw_log"
-    exit 1
-else
-    echo "Namespace created successfully!"
-fi
+check_injectived_result "$create_namespace_res" false
+echo "OK"
 echo ""
 
 echo "5) Minting 666..."
