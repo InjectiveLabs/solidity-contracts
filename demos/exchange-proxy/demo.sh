@@ -47,6 +47,8 @@ yes 12345678 | injectived tx exchange deposit 2000000000000$QUOTE $user_subaccou
     -y
 echo ""
 
+sleep 3s
+
 echo "3) Creating contract..."
 create_res=$(forge create src/tests/ExchangeProxy.sol:ExchangeProxy \
     -r $ETH_URL \
@@ -72,7 +74,8 @@ echo ""
 
 echo "4) Granting authorization..."
 # createDerivativeLimitOrder
-# spend-limit: 1000000 USDT
+# spend-limit: 1000000 USDT (quote-decimals are 0 for this market, as can be 
+# attested by running `injectived q exchange derivative-market $MARKET_ID`)
 # duration: 1 hour
 authorizations="[(8,[(1000000,peggy0xdAC17F958D2ee523a2206206994597C13D831ec7)],3600)]"
 
@@ -131,4 +134,7 @@ grpcurl -plaintext \
     -d '{"subaccount_id":"'$user_subaccount_id'", "market_id":"'$market_id'"}' \
     $GRPC_URL \
     injective.exchange.v1beta1.Query/SubaccountOrders
+echo ""
+
+injectived q authz grants-by-grantee $contract_inj_address
 echo ""

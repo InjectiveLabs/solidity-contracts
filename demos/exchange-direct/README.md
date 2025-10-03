@@ -1,10 +1,23 @@
-# Exchange Precompile Demo
+# Exchange Precompile Demo - Direct Contract Trading
 
 This demo shows how to write a smart-contract that uses the exchange precompile, 
 and how this smart-contract can be deployed and called using commonly used tools 
 like `forge` and `cast`.
 
-This demo goes through the following steps
+## Trading Methods
+
+This demo demonstrates the **exchange-direct** method, where the smart contract trades using its own funds and subaccount. The contract:
+- Manages its own deposits and withdrawals
+- Creates orders using its own balance
+- Does not require authorization from external users
+
+This is different from the **exchange-proxy** method (see `../exchange-proxy/` demo), where a smart contract trades on behalf of end users through authorization grants. 
+
+**Use exchange-direct when**: Your contract needs to trade autonomously with its own funds (e.g., AMM protocols, yield farming contracts, treasury management)
+
+**Use exchange-proxy when**: Your contract needs to execute trades on behalf of users while they retain custody of their funds
+
+This demo goes through the following steps:
 
 1) deploy `ExchangeDemo` contract
 2) Fund the contract account with some USDT
