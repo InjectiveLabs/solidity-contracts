@@ -5,6 +5,8 @@ import {IBankModule} from "./Bank.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 abstract contract BankERC20 is ERC20 {
+    event Failure(string message, bytes data);
+
     address constant bankContract = 0x0000000000000000000000000000000000000064;
     IBankModule bank = IBankModule(bankContract);
 
@@ -40,7 +42,15 @@ abstract contract BankERC20 is ERC20 {
 
     function _update(address from, address to, uint256 value) internal override {
         if (from == address(0)) { // mint
-            bank.mint(to, value);
+            try bank.mint(to, value) {
+                // Successfully minted
+            } catch Error(string memory reason) {
+                // catch failing revert() and require()
+                revert(string.concat("failed to mint: ", reason));
+            } catch (bytes memory reason) {
+                // catch failing assert()
+                revert(string.concat("failed to mint: unknown error: ", string(reason)));
+            }
         } else if (to == address(0)) { // burn
             bank.burn(from, value);
         } else { // transfer
