@@ -1,6 +1,6 @@
 { 
-  "denom": "erc20:0x7b93d12e37d636C88B32CA547d9dBD9410880A40",
-  "evm_hook": "0x2af45779919875CAaD2c42db884d8391F517B2F4",
+  "denom": "erc20:0x07Aa076883658B7ED99D25b1E6685808372C8fE2",
+  "evm_hook": "0xe2F81B30E1D47DFFdBb6aB41Ec5f0572705b026d",
   "role_permissions": [ 
     {
       "name": "EVERYONE",

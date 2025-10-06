@@ -2,7 +2,11 @@
 
 ################################################################################
 
-. .local.env
+source ./.local.env
+
+# Set default INJ_HOME if not already set
+: ${INJ_HOME:=~/.injectived}
+echo "User injectived home: $INJ_HOME"
 
 ################################################################################
 
@@ -30,7 +34,7 @@ else
         --unsafe-password "$USER_PWD" \
         --mnemonic "$USER_MNEMONIC"
 fi
-user_inj_address=$(yes $USER_PWD | injectived keys show -a $USER)
+user_inj_address=$(yes $USER_PWD | injectived --home $INJ_HOME keys show -a $USER)
 user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
 echo "User INJ address: $user_inj_address"
 echo "User ETH address: $user_eth_address"
