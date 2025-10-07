@@ -71,7 +71,7 @@ if [ $? -ne 0 ]; then
 fi
 echo ""
 
-sleep 3
+
 injectived q bank balances \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
