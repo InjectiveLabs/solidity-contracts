@@ -23,7 +23,7 @@ check_foundry_result() {
     res=$1
 
     eth_tx_hash=$(echo $res | jq -r '.transactionHash')
-    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash | sed -r 's/0x//' | tr -d '"')
+    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash -r $ETH_URL | sed -r 's/0x//' | tr -d '"')
 
     tx_receipt=$(injectived q tx $sdk_tx_hash --node $INJ_URL --output json)
     code=$(echo $tx_receipt | jq -r '.code')
@@ -34,7 +34,7 @@ check_foundry_result() {
 
         # Get detailed transaction trace for debugging
         echo "Getting transaction trace..."
-        cast rpc -r testnet debug_traceTransaction "[\"$eth_tx_hash\",{\"tracer\":\"callTracer\"}]" --raw | jq
+        cast rpc debug_traceTransaction "[\"$eth_tx_hash\",{\"tracer\":\"callTracer\"}]" --raw -r $ETH_URL | jq
         exit 1
     fi
 }
@@ -99,8 +99,12 @@ fi
 check_foundry_result "$proxy_res"
 
 proxy_address=$(echo "$proxy_res" | jq -r '.deployedTo')
+proxy_admin_slot=$(cast storage $proxy_address 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103 -r $ETH_URL) # admin slot
+proxy_admin_address=$(cast parse-bytes32-address $proxy_admin_slot) # admin slot
 denom="erc20:$proxy_address"
+
 echo "Proxy deployed at: $proxy_address"
+echo "ProxyAdmin deployed at: $proxy_admin_address"
 echo ""
 # Step 7: Initialize proxy (V1)
 echo "4) Initializing ERC20 through proxy..."
@@ -169,49 +173,102 @@ bal=$(printf "%d" $hexbal)
 echo "$denom: $bal"
 echo ""
 
-# Transfer
-echo "7) Transfer 555..."
-transfer_res=$(cast send \
+transfer_and_check() {
+    # Transfer
+    echo "Transfer 111..."
+    transfer_res=$(cast send \
+        -r $ETH_URL \
+        --account $USER \
+        --password $USER_PWD \
+        --json \
+        --legacy \
+        --gas-limit 1000000 \
+        --gas-price 10 \
+        $proxy_address \
+        "transfer(address,uint256)" 0x0b3D624F163F7135E1C5A7a777133e4126B96246 111)
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    check_foundry_result "$transfer_res"
+    echo "OK"
+    echo ""
+
+
+    # Query balances through cosmos x/bank
+    echo "Querying balances through cosmos x/bank..."
+    sleep 3
+    injectived q bank balances \
+        --chain-id $CHAIN_ID \
+        --node $INJ_URL \
+        --output json \
+        $user_inj_address \
+        | jq -r '.balances[] | select(.denom == "'$denom'") | "\(.denom): \(.amount)"'
+    echo ""
+
+    # Query balances through EVM JSON-RPC
+    echo "Querying balances through EVM JSON-RPC..."
+    hexbal=$(cast call \
+        -r $ETH_URL \
+        $proxy_address \
+        "balanceOf(address)" $user_eth_address)
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    bal=$(printf "%d" $hexbal)
+    echo "$denom: $bal"
+    echo ""
+}
+
+echo "7) Transfer 111 and check..."
+transfer_and_check
+
+echo "8) Deploying 2nd MintBurnERC20Upgradeable implementation..."
+impl2_res=$(forge create src/MintBurnBankERC20Upgradeable.sol:MintBurnBankERC20Upgradeable \
     -r $ETH_URL \
     --account $USER \
     --password $USER_PWD \
-    --json \
+    --broadcast \
     --legacy \
-    --gas-limit 1000000 \
+    --gas-limit 10000000 \
     --gas-price 10 \
-    $proxy_address \
-    "transfer(address,uint256)" 0x0b3D624F163F7135E1C5A7a777133e4126B96246 555)
+    -vvvv \
+    --json)
+
 if [ $? -ne 0 ]; then
+    echo "Error deploying implementation"
+    echo "$impl2_res"
     exit 1
 fi
-check_foundry_result "$transfer_res"
-echo "OK"
+
+check_foundry_result "$impl2_res"
+
+impl2_address=$(echo "$impl2_res" | jq -r '.deployedTo')
+echo "2nd implementation deployed at: $impl2_address"
 echo ""
 
-
-# Query balances through cosmos x/bank
-echo "8) Querying balances through cosmos x/bank..."
-sleep 3
-injectived q bank balances \
-    --chain-id $CHAIN_ID \
-    --node $INJ_URL \
-    --output json \
-    $user_inj_address \
-    | jq -r '.balances[] | select(.denom == "'$denom'") | "\(.denom): \(.amount)"'
-echo ""
-
-# Query balances through EVM JSON-RPC
-echo "8) Querying balances through EVM JSON-RPC..."
-hexbal=$(cast call \
+echo "9) Changing implementation inside Proxy..."
+proxy_change_res=$(cast send $proxy_admin_address \
+    "upgradeAndCall(address,address,bytes)" $proxy_address $impl2_address 0x \
     -r $ETH_URL \
-    $proxy_address \
-    "balanceOf(address)" $user_eth_address)
+    --account $USER \
+    --password $USER_PWD \
+    --legacy \
+    --gas-limit 10000000 \
+    --gas-price 10 \
+    -vvvv \
+    --json)
+
 if [ $? -ne 0 ]; then
+    echo "Error changing proxy implementation"
     exit 1
 fi
-bal=$(printf "%d" $hexbal)
-echo "$denom: $bal"
+
+check_foundry_result "$proxy_change_res"
+echo "Proxy implementation changed"
 echo ""
+
+echo "10) After implementation change, transfer again 111 and check..."
+transfer_and_check
 
 # Final summary
 echo "========================================"
@@ -219,8 +276,10 @@ echo "Deployment Complete!"
 echo "========================================"
 echo ""
 echo "Deployed Contracts:"
-echo "  Implementation:    $impl_address"
-echo "  Proxy:             $proxy_address"
+echo "  Implementation 1st:    $impl_address"
+echo "  Implementation 2nd:    $impl2_address"
+echo "  Proxy:                 $proxy_address"
+echo "  ProxyAdmin:            $proxy_admin_address"
 echo ""
 echo "Addresses:"
-echo "  Proxy Admin:            $user_eth_address"
+echo "  Proxy Admin Owner:            $user_eth_address"
