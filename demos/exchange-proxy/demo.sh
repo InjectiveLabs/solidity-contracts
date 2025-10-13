@@ -9,6 +9,8 @@
 check_foundry_result() {
     res=$1
     
+    sleep 3s
+
     eth_tx_hash=$(echo $res | jq -r '.transactionHash')
     sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash | sed -r 's/0x//' | tr -d '"')
 
@@ -21,6 +23,34 @@ check_foundry_result() {
         exit 1
     fi   
 }
+
+check_injectived_result() {
+    res=$1
+    should_fail=$2
+
+    # Extract transaction hash and check result
+    tx_hash=$(echo $res | jq -r '.txhash')
+
+    sleep 3s
+
+    # Check transaction result
+    tx_result=$(injectived q tx $tx_hash --node $INJ_URL --output json)
+    code=$(echo $tx_result | jq -r '.code')
+    raw_log=$(echo $tx_result | jq -r '.raw_log')
+
+    if [ $code -ne 0 ]; then
+        echo "Error: Tx Failed. Code: $code, Log: $raw_log"
+        if [ "$should_fail" = "false" ]; then 
+            exit 1
+        fi
+    fi
+
+    if [ "$should_fail" = "true" ] && [ $code -eq 0 ]; then
+        echo "Tx was expected to fail but succeeded"
+        exit 1
+    fi
+}
+
 
 echo "1) Importing user wallet..."
 if cast wallet list | grep -q $USER; then
@@ -40,14 +70,20 @@ echo "User subaccount ID: $user_subaccount_id"
 echo ""
 
 echo "2) Depositing funds to user subaccount..."
-yes 12345678 | injectived tx exchange deposit 2000000000000$QUOTE $user_subaccount_id \
+# deposit 1000 USDT into the user's subaccount
+deposit_res=$(yes 12345678 | injectived tx exchange deposit 1000000000$QUOTE $user_subaccount_id \
     --chain-id $CHAIN_ID \
     --from $USER \
     --fees 500000inj \
-    -y
+    --output json \
+    --broadcast-mode sync \
+    -y)
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+check_injectived_result "$deposit_res" false
+echo "OK"
 echo ""
-
-sleep 3s
 
 echo "3) Creating contract..."
 create_res=$(forge create src/tests/ExchangeProxy.sol:ExchangeProxy \
@@ -74,10 +110,9 @@ echo ""
 
 echo "4) Granting authorization..."
 # createDerivativeLimitOrder
-# spend-limit: 1000000 USDT (quote-decimals are 0 for this market, as can be 
-# attested by running `injectived q exchange derivative-market $MARKET_ID`)
+# spend-limit: 300 USDT (USDT has 6 decimals)
 # duration: 1 hour
-authorizations="[(8,[(1000000,peggy0xdAC17F958D2ee523a2206206994597C13D831ec7)],3600)]"
+authorizations="[(8,[(300000000,peggy0xdAC17F958D2ee523a2206206994597C13D831ec7)],3600)]"
 
 authz_res=$(cast send \
     -r $ETH_URL \
@@ -100,15 +135,21 @@ injectived q authz grants-by-grantee $contract_inj_address
 echo ""
 
 echo "5) calling proxy createDerivativeLimitOrder..."
-
+# create a derivative limit order in INJ/USDT perp market, with:
+# quantity: 1
+# price: 100 USDT / INJ
+# margin: 200 USDT
+# Note that the margin, which is roughly the amount that would be taken from the
+# user's deposit if this transaction goes through (aka the "hold"), is covered by
+# the 300 USDT grant created above
 market_id="0x7cc8b10d7deb61e744ef83bdec2bbcf4a056867e89b062c6a453020ca82bd4e4" # INJ/USDT
 user_subaccount_id="$user_eth_address"000000000000000000000001
+quantity=1 
+price=100000000
+margin=200000000 
 fee_recipient='""'
-price=20000
-quantity=100 
 cid='""'
 order_type="buy"
-margin=1000000 
 trigger_price=0
 
 authz_res=$(cast send \
@@ -136,5 +177,7 @@ grpcurl -plaintext \
     injective.exchange.v1beta1.Query/SubaccountOrders
 echo ""
 
+
+echo "7) Query grants again..."
 injectived q authz grants-by-grantee $contract_inj_address
 echo ""

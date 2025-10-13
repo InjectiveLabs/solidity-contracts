@@ -1,26 +1,33 @@
-# Exchange Precompile Demo - Proxy Contract Method
+# Exchange Precompile Demo - Proxy Contract Trading
 
-This demo demonstrates the **exchange-proxy** method, which differs from the **exchange-direct** method:
+This demo demonstrates how to deploy and interact with a smart contract that uses Injective's Exchange Precompile with authorization grants. The demo walks through deploying an existing `ExchangeProxy` contract and using it to trade on behalf of users through the authz system.
 
-- **Exchange-Direct**: The end user directly calls the exchange precompile functions from their wallet
-- **Exchange-Proxy**: The end user grants authorization to a smart contract, which then calls the exchange precompile on their behalf
+The demo uses standard Ethereum development tools (`forge` and `cast`) to interact with the smart contract on a local Injective testnet.
 
-This proxy method is useful for:
-- Creating more complex trading logic in smart contracts
-- Implementing automated trading strategies
-- Building DeFi protocols that need to trade on behalf of users
-- Batching multiple operations together
+## Trading Methods
 
-The key concept here is **authorization grants** - the end user must explicitly grant the proxy contract permission to trade on their behalf using Cosmos SDK's authz module.
+This demo demonstrates the **exchange-proxy** method, where a smart contract trades on behalf of end users through authorization grants. The contract:
+- Requires explicit authorization grants from users
+- Executes trades using users' funds and subaccounts
+- Manages spend limits through the authz system
+- Allows users to retain custody of their funds
 
-This demo goes through the following steps:
+This is different from the **exchange-direct** method (see `../exchange-direct/` demo), where the smart contract trades using its own funds and subaccount.
+
+**Use exchange-proxy when**: Your contract needs to execute trades on behalf of users while they retain custody of their funds (e.g., trading bots, portfolio management, complex order strategies)
+
+**Use exchange-direct when**: Your contract needs to trade autonomously with its own funds (e.g., AMM protocols, yield farming contracts, treasury management)
+
+## Overview
 
 1) Deposit funds in the trader's subaccount
 2) Deploy `ExchangeProxy` contract
 3) Create a grant from trader to contract for placing derivative limit orders
-4) Call the proxy contract to place an order
+4) Call the proxy contract to place a derivative limit order on the INJ/USDT perpetual market
 5) Check that the order was created
 6) Verify that the spendable limit of the grant has decreased after the order submission
+
+Note: INJ has 18 decimals and USDT has 6 decimals.
 
 ## Requirements
 

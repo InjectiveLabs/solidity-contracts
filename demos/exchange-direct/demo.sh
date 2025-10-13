@@ -9,6 +9,8 @@
 check_foundry_result() {
     res=$1
     
+    sleep 3s
+
     eth_tx_hash=$(echo $res | jq -r '.transactionHash')
     sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash | sed -r 's/0x//' | tr -d '"')
 
@@ -20,6 +22,33 @@ check_foundry_result() {
         echo "Error: Tx Failed. Code: $code, Log: $raw_log"
         exit 1
     fi   
+}
+
+check_injectived_result() {
+    res=$1
+    should_fail=$2
+
+    # Extract transaction hash and check result
+    tx_hash=$(echo $res | jq -r '.txhash')
+
+    sleep 3s
+
+    # Check transaction result
+    tx_result=$(injectived q tx $tx_hash --node $INJ_URL --output json)
+    code=$(echo $tx_result | jq -r '.code')
+    raw_log=$(echo $tx_result | jq -r '.raw_log')
+
+    if [ $code -ne 0 ]; then
+        echo "Error: Tx Failed. Code: $code, Log: $raw_log"
+        if [ "$should_fail" = "false" ]; then 
+            exit 1
+        fi
+    fi
+
+    if [ "$should_fail" = "true" ] && [ $code -eq 0 ]; then
+        echo "Tx was expected to fail but succeeded"
+        exit 1
+    fi
 }
 
 echo "1) Importing user wallet..."
@@ -53,22 +82,25 @@ contract_inj_address=$(injectived q exchange inj-address-from-eth-address $contr
 contract_subaccount_id="$contract_eth_address"000000000000000000000001
 echo "eth address: $contract_eth_address"
 echo "inj address: $contract_inj_address"
+echo "subaccount id: $contract_subaccount_id"
 echo ""
 
 echo "3) Funding contract..."
-# send 100 * 10^18 inj to the contract
-yes $USER_PWD | injectived tx bank send \
+# send 5000  USDT to the contract (equal to 5000*10^6 usdt because USDT has 6 decimals)
+fund_res=$(yes $USER_PWD | injectived tx bank send \
     -y \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
     --fees 500000inj \
     --broadcast-mode sync \
+    --output json \
     $USER \
     $contract_inj_address \
-    1000000000000$QUOTE
+    5000000000$QUOTE)
 if [ $? -ne 0 ]; then
     exit 1
 fi
+check_injectived_result "$fund_res" false
 echo ""
 
 
@@ -79,6 +111,7 @@ injectived q bank balances \
 echo ""
 
 echo "4) Calling contract.deposit..."
+# depost 1000 USDT into the contract's default exchange subaccount
 deposit_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
@@ -93,9 +126,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 check_foundry_result "$deposit_res"
+echo "OK"
 echo ""
 
-sleep 3
 echo "5) Querying contract deposits..."
 injectived q exchange deposits \
   --chain-id $CHAIN_ID \
@@ -105,6 +138,7 @@ injectived q exchange deposits \
 echo ""
 
 echo "6) Calling contract.withdraw..."
+# withdraw 500 USDT from the contract's exchange subaccount
 withdraw_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
@@ -114,11 +148,12 @@ withdraw_res=$(cast send \
     --json \
     --legacy \
     $contract_eth_address \
-    "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 999)
+    "withdraw(string,string,uint256)" $contract_subaccount_id $QUOTE 500000000)
 if [ $? -ne 0 ]; then
     exit 1
 fi
 check_foundry_result "$withdraw_res"
+echo "OK"
 echo ""
 
 echo "7) Querying contract deposits..."
@@ -130,8 +165,13 @@ injectived q exchange deposits \
 echo ""
 
 echo "8) Calling contract.createDerivativeLimitOrder..."
-price=10000
-margin=5000
+# create a buy order on the INJ/USDT derivative market with following properties:
+# quantity 1 INJ (10^18 inj) 
+# price 100 USDT (100000000 usdt / INJ)
+# margin: 200 USDT (200000000 usdt)
+quantity=1
+price=100000000
+margin=200000000
 order_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
@@ -142,16 +182,25 @@ order_res=$(cast send \
     --legacy \
     $contract_eth_address \
     "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
-    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price',1,"","buy",'$margin',0)')
+    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price','$quantity',"","buy",'$margin',0)')
 if [ $? -ne 0 ]; then
     exit 1
 fi
 check_foundry_result "$order_res"
+echo "OK"
 echo ""
 
 echo "9) Querying contract orders..."
 grpcurl -plaintext \
     -d '{"subaccount_id":"'$contract_subaccount_id'", "market_id":"'$MARKET_ID'"}' \
     $GRPC_URL \
-    injective.exchange.v1beta1.Query/SubaccountOrders
+    injective.exchange.v1beta1.Query/TraderDerivativeOrders
 echo ""
+
+echo "10) Querying contract deposits..."
+injectived q exchange deposits \
+  --chain-id $CHAIN_ID \
+  --node $INJ_URL \
+  $contract_inj_address \
+  1
+echo ""json

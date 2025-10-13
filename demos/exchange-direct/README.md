@@ -1,8 +1,8 @@
 # Exchange Precompile Demo - Direct Contract Trading
 
-This demo shows how to write a smart-contract that uses the exchange precompile, 
-and how this smart-contract can be deployed and called using commonly used tools 
-like `forge` and `cast`.
+This demo demonstrates how to deploy and interact with a smart contract that uses Injective's Exchange Precompile. The demo walks through deploying an existing `ExchangeDemo` contract and calling its methods to perform exchange operations like deposits, withdrawals, and order creation.
+
+The demo uses standard Ethereum development tools (`forge` and `cast`) to interact with the smart contract on a local Injective testnet.
 
 ## Trading Methods
 
@@ -19,14 +19,18 @@ This is different from the **exchange-proxy** method (see `../exchange-proxy/` d
 
 This demo goes through the following steps:
 
+## Overview
+
 1) deploy `ExchangeDemo` contract
 2) Fund the contract account with some USDT
 3) Call the smart-contract to deposit some USDT into the contract's subaccount
 4) Check contract deposits via contract query
 5) Call the smart-contract to withdraw some USDT from the contract's subaccount
 6) Check contract deposits again to check the withdrawal worked
-6) Call the smart-contract to create a derivative limit order using contract's deposit
-7) Check that the order was created
+7) Call the smart-contract to create a derivative limit order on the INJ/USDT perpetual market using the contract's deposit
+8) Check that the order was created
+
+Note: INJ has 18 decimals and USDT has 6 decimals.
 
 ## Requirements
 
