@@ -1,16 +1,26 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.20;
 
-import {BankERC20} from "./BankERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {BankERC20Upgradeable} from "./BankERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract MintBurnBankERC20 is Ownable, BankERC20 {
-    constructor(
+contract MintBurnBankERC20Upgradeable is
+    OwnableUpgradeable,
+    BankERC20Upgradeable
+{
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         address initialOwner,
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    ) payable BankERC20(name_, symbol_, decimals_) Ownable(initialOwner) {}
+    ) external payable initializer {
+        __BankERC20_init(name_, symbol_, decimals_);
+        __Ownable_init(initialOwner);
+    }
 
     function mint(address to, uint256 amount) public payable virtual onlyOwner {
         _mint(to, amount);

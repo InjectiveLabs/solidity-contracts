@@ -2,9 +2,14 @@
 
 ################################################################################
 
-source ./.local.env
+# Load environment variables
+if [ -f ./.local.env ]; then
+    source ./.local.env
+else
+    echo "Error: .local.env file not found"
+    exit 1
+fi
 
-# Set default INJ_HOME if not already set
 : ${INJ_HOME:=~/.injectived}
 echo "User injectived home: $INJ_HOME"
 
@@ -14,7 +19,7 @@ check_foundry_result() {
     res=$1
     
     eth_tx_hash=$(echo $res | jq -r '.transactionHash')
-    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash | sed -r 's/0x//' | tr -d '"')
+    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash -r $ETH_URL | sed -r 's/0x//' | tr -d '"')
 
     tx_receipt=$(injectived q tx $sdk_tx_hash --node $INJ_URL --output json)
     code=$(echo $tx_receipt | jq -r '.code')
