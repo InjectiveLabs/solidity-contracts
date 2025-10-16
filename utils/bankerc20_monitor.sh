@@ -4,7 +4,7 @@
 # 
 # To use this as a notification daemon, just redirect stderr to your notification service, example: ./bankerc20_monitor.sh 2>notif
 
-RPC_URL=https://k8s.testnet.evmix.json-rpc.injective.network
+RPC_URL=https://k8s.testnet.json-rpc.injective.network/
 INTERVAL=10 #seconds
 DUMP_FILE="dump.txt"
 
