@@ -12,8 +12,6 @@ fi
 
 : ${INJ_HOME:=~/.injectived}
 echo "User injectived home: $INJ_HOME"
-# Throwaway address for dummy initialization
-THROWAWAY_ADDRESS="0x0000000000000000000000000000000000000001"
 
 ################################################################################
 # Helper functions
@@ -53,7 +51,7 @@ echo "User INJ address: $user_inj_address"
 echo "User ETH address: $user_eth_address"
 echo ""
 
-echo "2) Deploying MintBurnERC20Upgradeable implementation..."
+echo "2) Deploying MintBurnBankERC20Upgradeable implementation..."
 impl_res=$(forge create src/MintBurnBankERC20Upgradeable.sol:MintBurnBankERC20Upgradeable \
     -r $ETH_URL \
     --account $USER \
@@ -222,7 +220,7 @@ transfer_and_check() {
 echo "7) Transfer 111 and check..."
 transfer_and_check
 
-echo "8) Deploying 2nd MintBurnERC20Upgradeable implementation..."
+echo "8) Deploying 2nd MintBurnBankERC20Upgradeable implementation..."
 impl2_res=$(forge create src/MintBurnBankERC20Upgradeable.sol:MintBurnBankERC20Upgradeable \
     -r $ETH_URL \
     --account $USER \

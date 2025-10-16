@@ -2,9 +2,14 @@
 
 ################################################################################
 
-source ./.local.env
+# Load environment variables
+if [ -f ./.local.env ]; then
+    source ./.local.env
+else
+    echo "Error: .local.env file not found"
+    exit 1
+fi
 
-# Set default INJ_HOME if not already set
 : ${INJ_HOME:=~/.injectived}
 echo "User injectived home: $INJ_HOME"
 
