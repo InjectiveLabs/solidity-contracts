@@ -1,14 +1,15 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import {IBankModule} from "./Bank.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 abstract contract BankERC20Upgradeable is ERC20Upgradeable {
-    address internal constant BANK_CONTRACT = 0x0000000000000000000000000000000000000064;
+    address internal constant BANK_CONTRACT =
+        0x0000000000000000000000000000000000000064;
     IBankModule internal bank;
 
-     /// @dev Initializer instead of constructor (called once via proxy)
+    /// @dev Initializer instead of constructor (called once via proxy)
     function __BankERC20_init(
         string memory name_,
         string memory symbol_,
@@ -20,20 +21,28 @@ abstract contract BankERC20Upgradeable is ERC20Upgradeable {
         bank.setMetadata(name_, symbol_, decimals_);
     }
 
-     // --------- View overrides ---------
+    function initialize(
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_
+    ) external payable virtual initializer {
+        __BankERC20_init(name_, symbol_, decimals_);
+    }
+
+    // --------- View overrides ---------
 
     function name() public view virtual override returns (string memory) {
-        (string memory _name,,) = bank.metadata(address(this));
+        (string memory _name, , ) = bank.metadata(address(this));
         return _name;
     }
 
     function symbol() public view virtual override returns (string memory) {
-        (,string memory _symbol,) = bank.metadata(address(this));
+        (, string memory _symbol, ) = bank.metadata(address(this));
         return _symbol;
     }
 
     function decimals() public view virtual override returns (uint8) {
-        (,,uint8 _decimals) = bank.metadata(address(this));
+        (, , uint8 _decimals) = bank.metadata(address(this));
         return _decimals;
     }
 
@@ -41,13 +50,19 @@ abstract contract BankERC20Upgradeable is ERC20Upgradeable {
         return bank.totalSupply(address(this));
     }
 
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(
+        address account
+    ) public view virtual override returns (uint256) {
         return bank.balanceOf(address(this), account);
     }
 
     // --------- Mutating logic ---------
 
-    function _update(address from, address to, uint256 value) internal virtual override {
+    function _update(
+        address from,
+        address to,
+        uint256 value
+    ) internal virtual override {
         if (from == address(0)) {
             bank.mint(to, value);
         } else if (to == address(0)) {
@@ -58,4 +73,11 @@ abstract contract BankERC20Upgradeable is ERC20Upgradeable {
 
         emit Transfer(from, to, value);
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[10] private __gap;
 }
