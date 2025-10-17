@@ -18,6 +18,10 @@ check_foundry_result() {
 
     if [ $code -ne 0 ]; then
         echo "Error: Tx Failed. Code: $code, Log: $raw_log"
+
+        # Get detailed transaction trace for debugging
+        echo "Getting transaction trace..."
+        cast rpc debug_traceTransaction "[\"$eth_tx_hash\",{\"tracer\":\"callTracer\"}]" --raw -r $ETH_URL | jq
         exit 1
     fi
 }
