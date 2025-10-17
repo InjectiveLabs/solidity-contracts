@@ -1,18 +1,23 @@
 #!/bin/sh
 
-################################################################################
+# Load environment variables
+if [ -f ./.local.env ]; then
+    source ./.local.env
+else
+    echo "Error: .local.env file not found"
+    exit 1
+fi
 
-. .local.env
+: ${INJ_HOME:=~/.injectived}
+echo "User injectived home: $INJ_HOME"
 
 ################################################################################
 
 check_foundry_result() {
     res=$1
     
-    sleep 3s
-
     eth_tx_hash=$(echo $res | jq -r '.transactionHash')
-    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash | sed -r 's/0x//' | tr -d '"')
+    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash -r $ETH_URL | sed -r 's/0x//' | tr -d '"')
 
     tx_receipt=$(injectived q tx $sdk_tx_hash --node $INJ_URL --output json)
     code=$(echo $tx_receipt | jq -r '.code')
@@ -20,8 +25,12 @@ check_foundry_result() {
 
     if [ $code -ne 0 ]; then
         echo "Error: Tx Failed. Code: $code, Log: $raw_log"
+
+        # Get detailed transaction trace for debugging
+        echo "Getting transaction trace..."
+        cast rpc debug_traceTransaction "[\"$eth_tx_hash\",{\"tracer\":\"callTracer\"}]" --raw -r $ETH_URL | jq
         exit 1
-    fi   
+    fi
 }
 
 check_injectived_result() {
@@ -89,6 +98,7 @@ echo "3) Funding contract..."
 # send 5000  USDT to the contract (equal to 5000*10^6 usdt because USDT has 6 decimals)
 fund_res=$(yes $USER_PWD | injectived tx bank send \
     -y \
+    --home $INJ_HOME \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
     --fees 500000inj \
