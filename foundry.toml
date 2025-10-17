@@ -15,4 +15,5 @@ remappings = [
 evmixt = "https://k8s.testnet.evmix.json-rpc.injective.network"
 devnet = "https://devnet.json-rpc.injective.dev"
 devnet-1 = "https://devnet-1.json-rpc.injective.dev"
+devnet-3 = "http://65.109.32.209:8545"
 testnet = "https://k8s.testnet.json-rpc.injective.network"
