@@ -1,8 +1,15 @@
 #!/bin/sh
 
-################################################################################
+# Load environment variables
+if [ -f ./.local.env ]; then
+    source ./.local.env
+else
+    echo "Error: .local.env file not found"
+    exit 1
+fi
 
-. .local.env
+: ${INJ_HOME:=~/.injectived}
+echo "User injectived home: $INJ_HOME"
 
 ################################################################################
 
@@ -10,7 +17,7 @@ check_foundry_result() {
     res=$1
     
     eth_tx_hash=$(echo $res | jq -r '.transactionHash')
-    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash | sed -r 's/0x//' | tr -d '"')
+    sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash -r $ETH_URL | sed -r 's/0x//' | tr -d '"')
 
     tx_receipt=$(injectived q tx $sdk_tx_hash --node $INJ_URL --output json)
     code=$(echo $tx_receipt | jq -r '.code')
@@ -31,7 +38,7 @@ else
         --mnemonic "$USER_MNEMONIC"
 fi
 echo ""
-user_inj_address=$(yes $USER_PWD | injectived keys show -a $USER)
+user_inj_address=$(yes $USER_PWD | injectived --home $INJ_HOME keys show -a $USER)
 user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
 echo "User INJ address: $user_inj_address"
 echo "User ETH address: $user_eth_address"
@@ -64,6 +71,7 @@ echo "3) Funding contract..."
 # send 100 * 10^18 inj to the contract
 yes $USER_PWD | injectived tx bank send \
     -y \
+    --home $INJ_HOME \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
     --fees 500000inj \
