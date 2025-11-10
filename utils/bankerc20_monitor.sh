@@ -110,6 +110,7 @@ do
 		check_res
 		NUM_PRECOMPILE_LOADS=$(echo "${RESULT}" | jq '[.structLogs[] | select(.op == "SLOAD") | .storage | to_entries[] | select(.value == "0000000000000000000000000000000000000000000000000000000000000064")] | length')
 
+		echo "NUM_PRECOMPILE_LOADS: ${NUM_PRECOMPILE_LOADS}"
 		if [[ "${NUM_PRECOMPILE_LOADS}" == "" ]]; then			
 			A=$(req 'eth_call' '{"to":'$CONTRACT_ADDRESS',"data":"0x06fdde03"},"latest"')
 			check_res
