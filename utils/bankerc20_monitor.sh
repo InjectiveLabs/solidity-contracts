@@ -15,7 +15,7 @@ DUMP_FILE="dump.txt"
 CHECKED_CONTRACTS=()
 
 echoerr() {
-	cat <<< "$@" 1>&2;
+	# cat <<< "$@" 1>&2;
 	cat <<< "$@"
 }
 
