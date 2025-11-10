@@ -108,7 +108,6 @@ do
 
 		A=$(req 'debug_traceTransaction' $TX_HASH)
 		check_res
-		echo "RESULT: ${RESULT}"
 		NUM_PRECOMPILE_LOADS=$(echo "${RESULT}" | jq '[.structLogs[] | select(.op == "SLOAD") | .storage | to_entries[] | select((.value | ltrimstr("0x")) == "0000000000000000000000000000000000000000000000000000000000000064")] | length')
 
 		if (( NUM_PRECOMPILE_LOADS == 0 )); then			
