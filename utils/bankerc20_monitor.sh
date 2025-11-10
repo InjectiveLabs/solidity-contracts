@@ -108,7 +108,7 @@ do
 
 		A=$(req 'debug_traceTransaction' $TX_HASH)
 		check_res
-		NUM_PRECOMPILE_LOADS=$(echo ${RESULT} | jq '.structLogs.[] | select(.op == "SLOAD").storage | to_entries.[] | select(.value == "0000000000000000000000000000000000000000000000000000000000000064") | length')
+		NUM_PRECOMPILE_LOADS=$(echo "${RESULT}" | jq '[.structLogs[] | select(.op == "SLOAD") | .storage | to_entries[] | select(.value == "0000000000000000000000000000000000000000000000000000000000000064")] | length')
 
 		if [[ "${NUM_PRECOMPILE_LOADS}" == "" ]]; then			
 			A=$(req 'eth_call' '{"to":'$CONTRACT_ADDRESS',"data":"0x06fdde03"},"latest"')
@@ -126,7 +126,7 @@ do
 			echo "$(echo $CONTRACT_ADDRESS | tr -d '"')" >> $DUMP_FILE
 		fi
 
-		CHECKED_CONTRACTS+=$CONTRACT_ADDRESS
+		CHECKED_CONTRACTS+=("$CONTRACT_ADDRESS")
 	done <<< "$CONTRACTS"
 
 	sleep $INTERVAL
