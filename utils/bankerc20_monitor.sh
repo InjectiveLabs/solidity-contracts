@@ -25,8 +25,9 @@ check_res() {
 		echo "last command failed with exit code $exit_code"
 		exit $exit_code
 	fi
+	local should_error=${1:-false}
 	local error="$(echo "${A}" | jq '.error')"
-	if [[ "${error}" != "null" ]]; then
+	if ! $should_error && [[ "${error}" != "null" ]]; then
 		echo "last command ended with error: ${error}"
 		exit 1
 	fi
@@ -72,6 +73,14 @@ do
 		fi
 
 		echo "checking $CONTRACT_ADDRESS (tx: $TX_HASH)..."
+
+		# filter out ERC721
+		A=$(req 'eth_call' '{"to":'${CONTRACT_ADDRESS}',"data":"0xc87b56dd0000000000000000000000000000000000000000000000000000000000000001"},"latest"')
+		check_res true
+		if [[ "${RESULT}" != "null" ]]; then # it is ERC721
+			CHECKED_CONTRACTS+=$CONTRACT_ADDRESS
+			continue
+		fi
 
 		A=$(req 'debug_traceTransaction' $TX_HASH)
 		check_res
