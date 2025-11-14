@@ -13,7 +13,7 @@ interface IExchangeModule {
     /// authorization granted to a grantee by a granter.
     struct Authorization {
         ExchangeTypes.MsgType method; // the message type URL of the method for which the authorization is granted
-        Cosmos.Coin[] spendLimit; // the spend limit
+        Cosmos.Coin[] spendLimit; // the spend limit - CHAIN FORMAT (token's native decimals, e.g., 1000000 = 1 USDT with 6 decimals)
         uint256 duration; // the time period for which the authorization is valid (in seconds)
     }
 
@@ -54,8 +54,8 @@ interface IExchangeModule {
     /// @dev Queries a subaccount's deposits for a given denomination
     /// @param subaccountID The ID of the subaccount
     /// @param denom The coin denomination
-    /// @return availableBalance The available balance of the deposit
-    /// @return totalBalance The total balance of the deposit
+    /// @return availableBalance The available balance - CHAIN FORMAT (token's native decimals, e.g., 1000000 = 1 USDT with 6 decimals)
+    /// @return totalBalance The total balance - CHAIN FORMAT (token's native decimals, e.g., 1000000 = 1 USDT with 6 decimals)
     function subaccountDeposit(
         string calldata subaccountID,
         string calldata denom
@@ -65,7 +65,7 @@ interface IExchangeModule {
     /// @param subaccountID The ID of the subaccount if trader and subaccountNonce are empty
     /// @param trader The address of the subaccount owner
     /// @param subaccountNonce The nonce of the subaccount
-    /// @return deposits The array of deposits
+    /// @return deposits The array of deposits - CHAIN FORMAT: balances use token's native decimals
     function subaccountDeposits(
         string calldata subaccountID,
         string calldata trader,
@@ -75,13 +75,13 @@ interface IExchangeModule {
     /// @dev SubaccountDepositData contains the information about a deposit.
     struct SubaccountDepositData {
         string denom;
-        uint256 availableBalance;
-        uint256 totalBalance;
+        uint256 availableBalance; // CHAIN FORMAT (token's native decimals, e.g., 1000000 = 1 USDT with 6 decimals)
+        uint256 totalBalance; // CHAIN FORMAT (token's native decimals, e.g., 1000000 = 1 USDT with 6 decimals)
     }
 
     /// @dev Queries all the derivative positions of a subaccount
     /// @param subaccountID The ID of the subaccount
-    /// @return positions The array of positions
+    /// @return positions The array of positions - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     function subaccountPositions(
         string calldata subaccountID
     ) external view returns (DerivativePosition[] calldata positions);
@@ -94,10 +94,10 @@ interface IExchangeModule {
         string subaccountID;
         string marketID;
         bool isLong;
-        uint256 quantity;
-        uint256 entryPrice;
-        uint256 margin;
-        uint256 cumulativeFundingEntry;
+        uint256 quantity; // API FORMAT: human-readable scaled by 18 decimals (e.g., 5250000000000000000 = 5.25)
+        uint256 entryPrice; // API FORMAT: human-readable scaled by 18 decimals (e.g., 50123450000000000000000 = 50123.45)
+        uint256 margin; // API FORMAT: human-readable scaled by 18 decimals (e.g., 1000750000000000000000 = 1000.75)
+        uint256 cumulativeFundingEntry; // API FORMAT: human-readable scaled by 18 decimals
     }
 
     /****************************************************************************
@@ -112,7 +112,7 @@ interface IExchangeModule {
     /// into. If empty, the coins will be deposited into the sender's default
     /// subaccount
     /// @param denom The denomination of the coin to deposit
-    /// @param amount The amount of coins to deposit
+    /// @param amount The amount of coins to deposit - CHAIN FORMAT (token's native decimals, e.g., 6 for USDT, 18 for INJ)
     /// @return success Whether the transaction was successful or not
     function deposit(
         address sender,
@@ -129,7 +129,7 @@ interface IExchangeModule {
     /// @param subaccountID The ID of the subaccount to withdraw funds from.
     /// Note the ownership of the subaccount by sender will be verified.
     /// @param denom The denomination of coins to withdraw
-    /// @param amount The amount of coins to withdraw
+    /// @param amount The amount of coins to withdraw - CHAIN FORMAT (token's native decimals, e.g., 6 for USDT, 18 for INJ)
     /// @return success Whether the transaction was successful or not
     function withdraw(
         address sender,
@@ -143,7 +143,7 @@ interface IExchangeModule {
     /// @param sourceSubaccountID The ID of the originating subaccount
     /// @param destinationSubaccountID The ID of the destination subaccount
     /// @param denom The denomination of coins to transfer
-    /// @param amount The amount of coins to transfer
+    /// @param amount The amount of coins to transfer - CHAIN FORMAT (token's native decimals, e.g., 6 for USDT, 18 for INJ)
     /// @return success Whether the transaction was a success or not
     function subaccountTransfer(
         address sender,
@@ -159,7 +159,7 @@ interface IExchangeModule {
     /// @param sourceSubaccountID The ID of the originating subaccount
     /// @param destinationSubaccountID The ID of the destination subaccount
     /// @param denom The denomination of coins to transfer
-    /// @param amount The amount of coins to transfer
+    /// @param amount The amount of coins to transfer - CHAIN FORMAT (token's native decimals, e.g., 6 for USDT, 18 for INJ)
     /// @return success Whether the transaction was a success or not
     function externalTransfer(
         address sender,
@@ -174,7 +174,7 @@ interface IExchangeModule {
     /// order cancellations (if any) occur first, followed by order creations
     // (if any).
     /// @param sender The address of the sender
-    /// @param request cf. BatchUpdateOrdersRequest
+    /// @param request cf. BatchUpdateOrdersRequest - API FORMAT: order price/quantity/margin fields are human-readable scaled by 18 decimals
     /// @return response cf. BatchUpdateOrdersResponse
     function batchUpdateOrders(
         address sender,
@@ -226,7 +226,7 @@ interface IExchangeModule {
     /// @dev retrieves a trader's derivative orders by market ID, subaccount ID,
     /// and order hashes
     /// @param request cf. DerivativeOrdersRequest
-    /// @return orders the trader's derivative orders
+    /// @return orders the trader's derivative orders - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     function derivativeOrdersByHashes(
         DerivativeOrdersRequest calldata request
     ) external returns (TrimmedDerivativeLimitOrder[] calldata orders);
@@ -243,11 +243,10 @@ interface IExchangeModule {
 
     /// @dev trimmed representation of a derivative limit order
     struct TrimmedDerivativeLimitOrder {
-        uint256 price;
-        uint256 quantity;
-        uint256 margin;
-        /// the amount of the quantity remaining fillable
-        uint256 fillable;
+        ExchangeTypes.UFixed256x18 price; // API FORMAT: human-readable scaled by 18 decimals (e.g., 50123450000000000000000 = 50123.45)
+        ExchangeTypes.UFixed256x18 quantity; // API FORMAT: human-readable scaled by 18 decimals (e.g., 5250000000000000000 = 5.25)
+        ExchangeTypes.UFixed256x18 margin; // API FORMAT: human-readable scaled by 18 decimals (e.g., 1000750000000000000000 = 1000.75)
+        ExchangeTypes.UFixed256x18 fillable; // the amount of the quantity remaining fillable - API FORMAT: human-readable scaled by 18 decimals
         bool isBuy;
         string orderHash;
         string cid;
@@ -265,18 +264,18 @@ interface IExchangeModule {
         string subaccountID;
         /// address that will receive fees for the order
         string feeRecipient;
-        /// price of the order
-        uint256 price;
-        /// quantity of the order
-        uint256 quantity;
+        /// price of the order - API FORMAT: human-readable scaled by 18 decimals (e.g., 50123450000000000000000 = 50123.45)
+        ExchangeTypes.UFixed256x18 price;
+        /// quantity of the order - API FORMAT: human-readable scaled by 18 decimals (e.g., 5250000000000000000 = 5.25)
+        ExchangeTypes.UFixed256x18 quantity;
         /// order identifier
         string cid;
         /// order type ("buy", "sell", "buyPostOnly", or "sellPostOnly")
         string orderType;
-        /// the margin used by the limit order
-        uint256 margin;
-        /// the trigger price used by stop/take orders
-        uint256 triggerPrice;
+        /// the margin used by the limit order - API FORMAT: human-readable scaled by 18 decimals (e.g., 1000750000000000000000 = 1000.75)
+        ExchangeTypes.UFixed256x18 margin;
+        /// the trigger price used by stop/take orders - API FORMAT: human-readable scaled by 18 decimals
+        ExchangeTypes.UFixed256x18 triggerPrice;
     }
 
     /// @dev encapsulates the return values of createDerivativeLimitOrder
@@ -299,13 +298,13 @@ interface IExchangeModule {
     struct CreateDerivativeMarketOrderResponse {
         string orderHash;
         string cid;
-        uint256 quantity;
-        uint256 price;
-        uint256 fee;
-        uint256 payout;
-        uint256 deltaExecutionQuantity;
-        uint256 deltaExecutionMargin;
-        uint256 deltaExecutionPrice;
+        ExchangeTypes.UFixed256x18 quantity; // API FORMAT: human-readable scaled by 18 decimals (e.g., 5250000000000000000 = 5.25)
+        ExchangeTypes.UFixed256x18 price; // API FORMAT: human-readable scaled by 18 decimals (e.g., 50123450000000000000000 = 50123.45)
+        ExchangeTypes.UFixed256x18 fee; // API FORMAT: human-readable scaled by 18 decimals
+        ExchangeTypes.UFixed256x18 payout; // API FORMAT: human-readable scaled by 18 decimals
+        ExchangeTypes.UFixed256x18 deltaExecutionQuantity; // API FORMAT: human-readable scaled by 18 decimals
+        ExchangeTypes.UFixed256x18 deltaExecutionMargin; // API FORMAT: human-readable scaled by 18 decimals
+        ExchangeTypes.UFixed256x18 deltaExecutionPrice; // API FORMAT: human-readable scaled by 18 decimals
         bool deltaIsLong;
     }
 
@@ -331,7 +330,7 @@ interface IExchangeModule {
 
     /// @dev create a derivative limit order
     /// @param sender The address of the sender
-    /// @param order The derivative order to create (cf. DerivativeOrder)
+    /// @param order The derivative order to create - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     /// @return response cf CreateDerivativeLimitOrderResponse
     function createDerivativeLimitOrder(
         address sender,
@@ -340,7 +339,7 @@ interface IExchangeModule {
 
     /// @dev create a batch of derivative limit orders
     /// @param sender The address of the sender
-    /// @param orders The orders to create
+    /// @param orders The orders to create - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     /// @return response cf. BatchCreateDerivativeLimitOrdersResponse
     function batchCreateDerivativeLimitOrders(
         address sender,
@@ -351,8 +350,8 @@ interface IExchangeModule {
 
     /// @dev create a derivative market order
     /// @param sender The address of the sender
-    /// @param order The order to create
-    /// @return response cf. CreateDerivativeMarketOrderResponse
+    /// @param order The order to create - API FORMAT: numeric fields are human-readable scaled by 18 decimals
+    /// @return response cf. CreateDerivativeMarketOrderResponse - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     function createDerivativeMarketOrder(
         address sender,
         DerivativeOrder calldata order
@@ -388,14 +387,14 @@ interface IExchangeModule {
     /// @param sourceSubaccountID The subaccount to send balance from
     /// @param destinationSubaccountID The subaccount that owns the position
     /// @param marketID The market where position is in
-    /// @param amount The amount by which to increase the position margin
+    /// @param amount The amount by which to increase the position margin - API FORMAT: human-readable scaled by 18 decimals (e.g., 1000750000000000000000 = 1000.75)
     /// @return success Whether the operation succeeded or not
     function increasePositionMargin(
         address sender,
         string calldata sourceSubaccountID,
         string calldata destinationSubaccountID,
         string calldata marketID,
-        uint256 amount
+        ExchangeTypes.UFixed256x18 amount
     ) external returns (bool success);
 
     /// @dev defines a request to decrease the margin of a position
@@ -403,14 +402,14 @@ interface IExchangeModule {
     /// @param sourceSubaccountID The subaccount that owns the position
     /// @param destinationSubaccountID The subaccount to send balance to
     /// @param marketID The market where position is in
-    /// @param amount The amount by which to decrease the position margin
+    /// @param amount The amount by which to decrease the position margin - API FORMAT: human-readable scaled by 18 decimals (e.g., 500250000000000000000 = 500.25)
     /// @return success Whether the operation succeeded or not
     function decreasePositionMargin(
         address sender,
         string calldata sourceSubaccountID,
         string calldata destinationSubaccountID,
         string calldata marketID,
-        uint256 amount
+        ExchangeTypes.UFixed256x18 amount
     ) external returns (bool success);
 
     /****************************************************************************
@@ -420,7 +419,7 @@ interface IExchangeModule {
     /// @dev retrieves a trader's spot orders by market ID, subaccount ID,
     /// and order hashes
     /// @param request cf. SpotOrdersRequest
-    /// @return orders the trader's spot orders
+    /// @return orders the trader's spot orders - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     function spotOrdersByHashes(
         SpotOrdersRequest calldata request
     ) external returns (TrimmedSpotLimitOrder[] calldata orders);
@@ -437,10 +436,9 @@ interface IExchangeModule {
 
     /// @dev trimmed representation of a spot limit order
     struct TrimmedSpotLimitOrder {
-        uint256 price;
-        uint256 quantity;
-        /// the amount of the quantity remaining fillable
-        uint256 fillable;
+        ExchangeTypes.UFixed256x18 price; // API FORMAT: human-readable scaled by 18 decimals (e.g., 1050000000000000000 = 1.05)
+        ExchangeTypes.UFixed256x18 quantity; // API FORMAT: human-readable scaled by 18 decimals (e.g., 100250000000000000000 = 100.25)
+        ExchangeTypes.UFixed256x18 fillable; // the amount of the quantity remaining fillable - API FORMAT: human-readable scaled by 18 decimals
         bool isBuy;
         string orderHash;
         string cid;
@@ -458,16 +456,16 @@ interface IExchangeModule {
         string subaccountID;
         /// address that will receive fees for the order
         string feeRecipient;
-        /// price of the order
-        uint256 price;
-        /// quantity of the order
-        uint256 quantity;
+        /// price of the order - API FORMAT: human-readable scaled by 18 decimals (e.g., 1050000000000000000 = 1.05)
+        ExchangeTypes.UFixed256x18 price;
+        /// quantity of the order - API FORMAT: human-readable scaled by 18 decimals (e.g., 100250000000000000000 = 100.25)
+        ExchangeTypes.UFixed256x18 quantity;
         /// order identifier
         string cid;
         /// order type ( "buy", "sell", "buyPostOnly", or "sellPostOnly")
         string orderType;
-        /// the trigger price used by stop/take orders
-        uint256 triggerPrice;
+        /// the trigger price used by stop/take orders - API FORMAT: human-readable scaled by 18 decimals
+        ExchangeTypes.UFixed256x18 triggerPrice;
     }
 
     /// @dev encapsulates the return values of createSpotLimitOrder
@@ -490,14 +488,14 @@ interface IExchangeModule {
     struct CreateSpotMarketOrderResponse {
         string orderHash;
         string cid;
-        uint256 quantity;
-        uint256 price;
-        uint256 fee;
+        ExchangeTypes.UFixed256x18 quantity; // API FORMAT: human-readable scaled by 18 decimals (e.g., 100250000000000000000 = 100.25)
+        ExchangeTypes.UFixed256x18 price; // API FORMAT: human-readable scaled by 18 decimals (e.g., 1050000000000000000 = 1.05)
+        ExchangeTypes.UFixed256x18 fee; // API FORMAT: human-readable scaled by 18 decimals
     }
 
     /// @dev create a spot limit order
     /// @param sender The address of the sender
-    /// @param order The spot order to create (cf. SpotOrder)
+    /// @param order The spot order to create - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     /// @return response cf. CreateSpotLimitOrderResponse
     function createSpotLimitOrder(
         address sender,
@@ -506,7 +504,7 @@ interface IExchangeModule {
 
     /// @dev create a batch of spot limit orders
     /// @param sender The address of the sender
-    /// @param orders The orders to create
+    /// @param orders The orders to create - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     /// @return response cf. BatchCreateSpotOrdersResponse
     function batchCreateSpotLimitOrders(
         address sender,
@@ -515,8 +513,8 @@ interface IExchangeModule {
 
     /// @dev create a spot market order
     /// @param sender The address of the sender
-    /// @param order The order to create
-    /// @return response cf. batchCreateSpotMarketOrderResponse
+    /// @param order The order to create - API FORMAT: numeric fields are human-readable scaled by 18 decimals
+    /// @return response cf. batchCreateSpotMarketOrderResponse - API FORMAT: numeric fields are human-readable scaled by 18 decimals
     function createSpotMarketOrder(
         address sender,
         SpotOrder calldata order

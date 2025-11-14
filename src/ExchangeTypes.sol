@@ -2,6 +2,13 @@
 pragma solidity ^0.8.4;
 
 library ExchangeTypes {
+    /// @dev User-defined type representing a fixed-point decimal number with 18 decimal places.
+    /// This type is used for human-readable numeric parameters in exchange precompile order operations,
+    /// allowing values to be specified in API FORMAT (e.g., "1.5" = 1.5 × 10^18 = 1500000000000000000).
+    /// The underlying uint256 stores the value scaled by 10^18 to preserve decimal precision.
+    /// Note: Deposit, withdraw, and transfer operations use CHAIN FORMAT (native token decimals) instead.
+    type UFixed256x18 is uint256;
+
     /// @dev User-defined type for exchange methods that can be approved. This
     /// matches the MsgType type defined in the Exchange authz types.
     type MsgType is uint8;
