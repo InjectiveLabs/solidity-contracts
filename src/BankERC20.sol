@@ -16,7 +16,9 @@ abstract contract BankERC20 is ERC20 {
         uint8 decimals_
     ) payable ERC20("", "") {
         // parent ERC20 metadata is not used
-        bank.setMetadata(name_, symbol_, decimals_);
+        if (bytes(name_).length > 0) {
+            bank.setMetadata(name_, symbol_, decimals_);
+        }
     }
 
     function name() public view virtual override returns (string memory) {
