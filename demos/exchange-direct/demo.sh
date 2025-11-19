@@ -20,6 +20,7 @@ check_foundry_result() {
     sdk_tx_hash=$(cast rpc inj_getTxHashByEthHash $eth_tx_hash -r $ETH_URL | sed -r 's/0x//' | tr -d '"')
 
     tx_receipt=$(injectived q tx $sdk_tx_hash --node $INJ_URL --output json)
+
     code=$(echo $tx_receipt | jq -r '.code')
     raw_log=$(echo $tx_receipt | jq -r '.raw_log')
 
@@ -176,12 +177,14 @@ echo ""
 
 echo "8) Calling contract.createDerivativeLimitOrder..."
 # create a buy order on the INJ/USDT derivative market with following properties:
-# quantity 1 INJ (10^18 inj) 
-# price 100 USDT (100000000 usdt / INJ)
-# margin: 200 USDT (200000000 usdt)
-quantity=1
-price=100000000
-margin=200000000
+# numbers are in API FORMAT, human-readable with 18 decimals
+# Oracle mark price is ~1.461, so use prices close to that
+# quantity 125.75 INJ (125750000000000000000) 
+# price 1.45 USDT (1450000000000000000) - slightly below mark price for buy order
+# margin: 10.5 USDT (10500000000000000000) - notional is 182.3375, min margin ~9.12, using 10.5 for safety
+quantity=125750000000000000000
+price=1450000000000000000
+margin=10500000000000000000
 order_res=$(cast send \
     -r $ETH_URL \
     --account $USER \
@@ -192,7 +195,7 @@ order_res=$(cast send \
     --legacy \
     $contract_eth_address \
     "createDerivativeLimitOrder((string,string,string,uint256,uint256,string,string,uint256,uint256))" \
-    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price','$quantity',"","buy",'$margin',0)')
+    '('"$MARKET_ID"','"$contract_subaccount_id"',"",'$price','$quantity',"","buy",'$margin','$price')')
 if [ $? -ne 0 ]; then
     exit 1
 fi

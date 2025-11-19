@@ -146,17 +146,19 @@ echo ""
 
 echo "5) calling proxy createDerivativeLimitOrder..."
 # create a derivative limit order in INJ/USDT perp market, with:
-# quantity: 1
-# price: 100 USDT / INJ
-# margin: 200 USDT
+# numbers are in API FORMAT, human-readable with 18 decimals
+# Oracle mark price is ~1.461, so use prices close to that
+# quantity 125.75 INJ (125750000000000000000) 
+# price 1.45 USDT (1450000000000000000) - slightly below mark price for buy order
+# margin: 10.5 USDT (10500000000000000000) - notional is 182.3375, min margin ~9.12, using 10.5 for safety
 # Note that the margin, which is roughly the amount that would be taken from the
 # user's deposit if this transaction goes through (aka the "hold"), is covered by
 # the 300 USDT grant created above
 market_id="0x7cc8b10d7deb61e744ef83bdec2bbcf4a056867e89b062c6a453020ca82bd4e4" # INJ/USDT
 user_subaccount_id="$user_eth_address"000000000000000000000001
-quantity=1 
-price=100000000
-margin=200000000 
+quantity=125750000000000000000
+price=1450000000000000000
+margin=10500000000000000000
 fee_recipient='""'
 cid='""'
 order_type="buy"
