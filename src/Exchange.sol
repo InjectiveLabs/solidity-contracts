@@ -271,7 +271,7 @@ interface IExchangeModule {
         uint256 quantity;
         /// order identifier
         string cid;
-        /// order type ("buy", "sell", "buyPostOnly", or "sellPostOnly")
+        /// order type ("buy", "sell", "buyPostOnly", "sellPostOnly", "stopBuy", "stopSell", "takeBuy", "takeSell", "buyAtomic", or "sellAtomic")
         string orderType;
         /// the margin used by the limit order
         uint256 margin;
@@ -464,7 +464,7 @@ interface IExchangeModule {
         uint256 quantity;
         /// order identifier
         string cid;
-        /// order type ( "buy", "sell", "buyPostOnly", or "sellPostOnly")
+        /// order type ( "buy", "sell", "buyPostOnly", "sellPostOnly", "buyAtomic", or "sellAtomic")
         string orderType;
         /// the trigger price used by stop/take orders
         uint256 triggerPrice;
