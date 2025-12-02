@@ -30,7 +30,7 @@ contract RestrictSpecificAddressTransferHook is PermissionsHook {
     address constant outOfGasAddress =
         0x6880D7bfE96D49501141375ED835C24cf70E2bD7; // user3
     address constant revertAddress =
-        0x963EBDf2e1f8DB8707D05FC75bfeFFBa1B5BaC17; // user4
+        0x727AEE334987c52fA7b567b2662BDbb68614e48C; // user4
 
     error ArtificialRevert();
 
