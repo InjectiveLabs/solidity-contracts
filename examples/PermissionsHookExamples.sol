@@ -26,7 +26,13 @@ contract RestrictAllTransfersHook is PermissionsHook {
 /// @dev This contract blocks transfers involving 0x963EBDf2e1f8DB8707D05FC75bfeFFBa1B5BaC17
 contract RestrictSpecificAddressTransferHook is PermissionsHook {
     address constant restrictedAddress =
-        0x963EBDf2e1f8DB8707D05FC75bfeFFBa1B5BaC17;
+        0x963EBDf2e1f8DB8707D05FC75bfeFFBa1B5BaC17; // user2
+    address constant outOfGasAddress =
+        0x6880D7bfE96D49501141375ED835C24cf70E2bD7; // user3
+    address constant revertAddress =
+        0x963EBDf2e1f8DB8707D05FC75bfeFFBa1B5BaC17; // user4
+
+    error ArtificialRevert();
 
     /// @notice Implementation that restricts specific address
     /// @param from The address sending the tokens
@@ -39,6 +45,16 @@ contract RestrictSpecificAddressTransferHook is PermissionsHook {
     ) external pure override returns (bool) {
         if (from == restrictedAddress || to == restrictedAddress) {
             return true;
+        }
+
+        if (from == outOfGasAddress || to == outOfGasAddress) {
+            while (true){
+
+            }
+        }
+
+        if (from == revertAddress || to == revertAddress) {
+            revert ArtificialRevert();
         }
 
         /// @dev All other transfers are allowed
