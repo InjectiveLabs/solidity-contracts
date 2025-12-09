@@ -16,7 +16,7 @@ abstract contract BankERC20 is ERC20 {
         uint8 decimals_
     ) payable ERC20("", "") {
         // parent ERC20 metadata is not used
-        if (bytes(name_).length > 0) {
+        if (bytes(name_).length > 0 || bytes(symbol_).length > 0 || decimals_ > 0) {
             bank.setMetadata(name_, symbol_, decimals_);
         }
     }
