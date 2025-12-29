@@ -270,7 +270,7 @@ interface IExchangeModule {
         ExchangeTypes.UFixed256x18 quantity;
         /// order identifier
         string cid;
-        /// order type ("buy", "sell", "buyPostOnly", "sellPostOnly", "stopBuy", "stopSell", "takeBuy", "takeSell", "buyAtomic", or "sellAtomic")
+        /// order type ("buy", "sell", "buyPostOnly", "sellPostOnly", "buyAtomic", or "sellAtomic")
         string orderType;
         /// the margin used by the limit order - API FORMAT: human-readable scaled by 18 decimals (e.g., 1000750000000000000000 = 1000.75)
         ExchangeTypes.UFixed256x18 margin;
