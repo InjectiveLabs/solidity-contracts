@@ -33,7 +33,7 @@ rustup update stable
 
 ### Grpcurl
 
-`grpcurl` is a command-line tool that lets you interact with gRPC servers. It's 
+`grpcurl` is a command-line tool that lets you interact with gRPC servers. It's
 basically curl for gRPC servers.
 
 ```
@@ -44,19 +44,21 @@ brew install grpcurl
 
 Build from source and run a local `injectived` node.
 
-Clone `injectived`: 
+Clone `injectived`:
 
 ```
-git clone -b v1.16.0 https://github.com/InjectiveFoundation/injective-core 
+git clone -b v1.16.4 https://github.com/InjectiveFoundation/injective-core 
 ```
 
 Setup the genesis file:
+
 ```
 cd injective-core
 ./setup.sh
 ```
 
 Build and run `injectived`:
+
 ```
 make install
 INJHOME="$(pwd)/.injectived" ./injectived.sh

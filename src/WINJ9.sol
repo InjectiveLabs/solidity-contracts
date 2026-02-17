@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 
 import "./BankERC20.sol";
 import "./IWINJ9.sol";
@@ -12,7 +12,7 @@ contract WINJ9 is BankERC20, IWINJ9 {
 
     /// @notice Constructor for WINJ9 token
     /// @param name_ Token name
-    /// @param symbol_ Token symbol  
+    /// @param symbol_ Token symbol
     /// @param decimals_ Token decimals
     constructor(
         string memory name_,
@@ -30,7 +30,7 @@ contract WINJ9 is BankERC20, IWINJ9 {
     function deposit() public payable override {
         // Mint wrapped tokens to the sender
         _mint(msg.sender, msg.value);
-        
+
         emit Deposit(msg.sender, msg.value);
     }
 
@@ -38,17 +38,17 @@ contract WINJ9 is BankERC20, IWINJ9 {
     /// @param wad Amount of wrapped INJ to burn for native INJ
     function withdraw(uint256 wad) public override {
         require(balanceOf(msg.sender) >= wad, "WINJ9: insufficient balance");
-        
+
         // Burn wrapped tokens from the sender
         _burn(msg.sender, wad);
-        
+
         // Transfer native INJ to the sender
         // The difference between this and msg.sender.transfer(wad):
         // 1. transfer() has a 2300 gas limit which can cause issues with complex receivers
         // 2. call{} is the recommended approach since EIP-1884 as it's more flexible
         (bool success, ) = msg.sender.call{value: wad}("");
         require(success, "WINJ9: INJ transfer failed");
-        
+
         emit Withdrawal(msg.sender, wad);
     }
 }

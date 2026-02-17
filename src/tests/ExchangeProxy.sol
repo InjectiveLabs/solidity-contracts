@@ -26,6 +26,23 @@ contract ExchangeProxy {
         }
     }
 
+    /// @dev Creates multiple derivative limit orders on behalf of the specified sender.
+    /// It will revert with an error if this smart-contract doesn't have a grant 
+    /// from the sender to perform this action on their behalf.
+    /// @param sender The address of the sender.
+    /// @param orders Array of derivative orders to create.
+    /// @return response The response from the batchCreateDerivativeLimitOrders call.
+    function batchCreateDerivativeLimitOrders(
+        address sender,
+        IExchangeModule.DerivativeOrder[] calldata orders
+    ) external returns (IExchangeModule.BatchCreateDerivativeLimitOrdersResponse memory response) {
+        try exchange.batchCreateDerivativeLimitOrders(sender, orders) returns (IExchangeModule.BatchCreateDerivativeLimitOrdersResponse memory resp) {
+            return resp;
+        } catch {
+            revert("error creating derivative limit orders in batch");
+        }
+    }
+
     function queryAllowance(
         address grantee,
         address granter, 

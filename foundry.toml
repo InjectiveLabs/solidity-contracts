@@ -1,19 +1,20 @@
 [profile.default]
-src = "src"
-out = "out"
-libs = ["lib"]
 evm_version = "shanghai"
+libs = ["lib"]
+out = "out"
+src = "src"
 
 remappings = [
-    '@layerzerolabs/oft-evm/=lib/devtools/packages/oft-evm/',
-    '@layerzerolabs/oapp-evm/=lib/devtools/packages/oapp-evm/',
-    '@layerzerolabs/lz-evm-protocol-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/protocol',
-    '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
+  '@layerzerolabs/oft-evm/=lib/devtools/packages/oft-evm/',
+  '@layerzerolabs/oapp-evm/=lib/devtools/packages/oapp-evm/',
+  '@layerzerolabs/lz-evm-protocol-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/protocol',
+  '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
+  '@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
 ]
 
 [rpc_endpoints]
-evmixt = "https://k8s.testnet.evmix.json-rpc.injective.network"
 devnet = "https://devnet.json-rpc.injective.dev"
 devnet-1 = "https://devnet-1.json-rpc.injective.dev"
 devnet-3 = "http://65.109.32.209:8545"
 testnet = "https://k8s.testnet.json-rpc.injective.network"
+local = "http://localhost:8545"

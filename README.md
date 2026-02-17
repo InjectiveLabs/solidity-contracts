@@ -24,6 +24,22 @@ The Staking Precompile provides a system smart contract interface for interactin
 
 For more details, see the [Staking Precompile documentation](docs/staking_precompile.md) and try out the [Staking demo](demos/staking/README.md).
 
+## Pre-signed Transactions
+
+### WINJ9
+
+WINJ9 is a pre-deployed contract that allows users to wrap INJ tokens into WINJ tokens. Deployment on a new chain requires a pre-signed non-EIP155 transaction that can be obtained by running the `utils/winj9_predeploy.sh` script (requires Node.js and Foundry).
+
+```bash
+export ETH_PRIVATE_KEY=0x...
+
+./utils/winj9_predeploy.sh
+```
+
+The script will output the pre-signed transaction, which can be used to deploy the contract.
+
+* WINJ9 universal address: `0x0000000088827d2d103ee2d9a6b781773ae03ffb`
+* WINJ9 deployment transaction hash: `0xaf072dcb6775faaeea4a2bfa99b93ecdc08f7197ecde2d0e44cb8d57702e43a8`
 
 ## License
 

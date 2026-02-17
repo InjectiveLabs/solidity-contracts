@@ -3,7 +3,7 @@
 
 The Staking Precompile allows smart contracts and externally owned accounts to interact with the staking module of the chain. This includes delegating tokens to validators, undelegating them, redelegating to another validator, querying delegation data, and withdrawing staking rewards.
 
-It is available at the fixed address `0x0000000000000000000000000000000000000065`
+It is available at the fixed address `0x0000000000000000000000000000000000000066`
 
 ## Interface
 

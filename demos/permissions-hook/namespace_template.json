@@ -1,0 +1,27 @@
+{ 
+  "denom": "[DENOM]",
+  "evm_hook": "[EVM_HOOK]",
+  "role_permissions": [ 
+    {
+      "name": "EVERYONE",
+      "role_id": 0,
+      "permissions": 10 
+    },
+    {
+      "name": "admin",
+      "role_id": 1,
+      "permissions": 2013265920
+    },
+    {
+      "name": "user",
+      "role_id": 2,
+      "permissions": 15
+    }
+  ],
+  "actor_roles": [
+    {
+      "actor": "[ADMIN]",
+      "roles": ["admin"]
+    }
+  ]
+}

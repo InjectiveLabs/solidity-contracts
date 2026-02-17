@@ -1,4 +1,4 @@
-# Exchange Precompile Demo
+# Staking Precompile Demo
 
 This demo shows how to deploy and interact with a smart-contract that uses the 
 staking precompile using `cast` and `foundry`.
@@ -48,7 +48,7 @@ Build from source and run a local `injectived` node.
 Clone `injectived`: 
 
 ```
-git clone -b v1.16.0 https://github.com/InjectiveFoundation/injective-core 
+git clone -b v1.16.4 https://github.com/InjectiveFoundation/injective-core 
 ```
 
 Setup the genesis file:

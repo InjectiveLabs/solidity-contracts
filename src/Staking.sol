@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.20;
 
 import {Cosmos} from "./CosmosTypes.sol";
 
@@ -37,7 +37,6 @@ interface IStakingModule {
         uint256 amount
     ) external returns (bool success);
 
-
     /// @dev Queries the given amount of the bond denomination to a validator.
     /// @param delegatorAddress The address of the delegator.
     /// @param validatorAddress The address of the validator.
@@ -49,10 +48,9 @@ interface IStakingModule {
         string memory validatorAddress
     ) external view returns (uint256 shares, Cosmos.Coin calldata balance);
 
-
     /***************************************************************************
-    * DISTRIBUTION                                                             * 
-    ***************************************************************************/
+     * DISTRIBUTION                                                             *
+     ***************************************************************************/
 
     /// @dev Withdraw the rewards of a delegator from a validator
     /// @param validatorAddress The address of the validator
@@ -60,5 +58,4 @@ interface IStakingModule {
     function withdrawDelegatorRewards(
         string memory validatorAddress
     ) external returns (Cosmos.Coin[] calldata amount);
-
 }
