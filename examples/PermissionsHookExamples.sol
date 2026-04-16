@@ -2,7 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {Cosmos} from "../src/CosmosTypes.sol";
-import {PermissionsPostHook, PermissionsHook} from "../src/PermissionsHook.sol";
+import {PermissionsHook} from "../src/PermissionsHook.sol";
+import {PermissionsPostHook} from "../src/PermissionsPostHook.sol";
 
 /// @title RestrictAllTransfersHook
 /// @notice Concrete implementation that blocks ALL transfers
