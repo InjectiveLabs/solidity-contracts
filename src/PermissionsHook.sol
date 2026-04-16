@@ -11,6 +11,14 @@ interface IPermissionsHook {
     ) external view returns (bool);
 }
 
+interface IPermissionsPostHook {
+    function postTransfer(
+        address from,
+        address to,
+        Cosmos.Coin calldata amount
+    ) external;
+}
+
 /// @title PermissionsHook
 /// @notice Base implementation of the permissions hook contract interface
 /// @dev This contract provides a standard implementation that can be extended
@@ -30,4 +38,12 @@ abstract contract PermissionsHook is IPermissionsHook {
 
         return false;
     }
+}
+
+abstract contract PermissionsPostHook is IPermissionsPostHook {
+    function postTransfer(
+        address from,
+        address to,
+        Cosmos.Coin calldata amount
+    ) external virtual {}
 }

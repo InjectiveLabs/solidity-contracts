@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Cosmos} from "../src/CosmosTypes.sol";
-import {PermissionsHook} from "../src/PermissionsHook.sol";
+import {PermissionsPostHook, PermissionsHook} from "../src/PermissionsHook.sol";
 
 /// @title RestrictAllTransfersHook
 /// @notice Concrete implementation that blocks ALL transfers
@@ -59,5 +59,17 @@ contract RestrictSpecificAddressTransferHook is PermissionsHook {
 
         /// @dev All other transfers are allowed
         return false;
+    }
+}
+
+contract TransfersHookWithSideEffect is PermissionsPostHook {
+    uint256 public counter; // global state variable
+
+    function postTransfer(
+        address from,
+        address to,
+        Cosmos.Coin calldata amount
+    ) external override {
+        counter += 1;
     }
 }
