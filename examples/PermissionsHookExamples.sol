@@ -66,11 +66,14 @@ contract RestrictSpecificAddressTransferHook is PermissionsHook {
 contract TransfersHookWithSideEffect is PermissionsPostHook {
     uint256 public counter; // global state variable
 
+    event CountChanged(uint256 newValue, string action);
+
     function postTransfer(
         address from,
         address to,
         Cosmos.Coin calldata amount
     ) external override {
         counter += 1;
+        emit CountChanged(count, "increment");
     }
 }
