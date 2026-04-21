@@ -74,6 +74,6 @@ contract TransfersHookWithSideEffect is PermissionsPostHook {
         Cosmos.Coin calldata amount
     ) external override {
         counter += 1;
-        emit CountChanged(count, "increment");
+        emit CountChanged(counter, "increment");
     }
 }
