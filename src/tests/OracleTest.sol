@@ -35,4 +35,62 @@ contract OracleTest {
         require(success, "staticcall failed");
         price = abi.decode(result, (uint256));
     }
+
+    /// @dev Calls oraclePricePairState via a regular CALL.
+    function oraclePricePairState(
+        uint8 oracleType,
+        string memory base,
+        string memory quote
+    ) external view returns (IOracleModule.PricePairState memory) {
+        return oracle.oraclePricePairState(oracleType, base, quote);
+    }
+
+    /// @dev Calls oraclePricePairState via an explicit STATICCALL.
+    function oraclePricePairStateViaStaticCall(
+        uint8 oracleType,
+        string memory base,
+        string memory quote
+    ) external view returns (IOracleModule.PricePairState memory state) {
+        bytes memory data = abi.encodeWithSelector(
+            IOracleModule.oraclePricePairState.selector,
+            oracleType,
+            base,
+            quote
+        );
+        (bool success, bytes memory result) = oracleContract.staticcall(data);
+        require(success, "staticcall failed");
+        state = abi.decode(result, (IOracleModule.PricePairState));
+    }
+
+    /// @dev Calls oraclePricePairStateScaled via a regular CALL.
+    function oraclePricePairStateScaled(
+        uint8 oracleType,
+        string memory base,
+        string memory quote,
+        uint32 baseDecimals,
+        uint32 quoteDecimals
+    ) external view returns (IOracleModule.PricePairState memory) {
+        return oracle.oraclePricePairStateScaled(oracleType, base, quote, baseDecimals, quoteDecimals);
+    }
+
+    /// @dev Calls oraclePricePairStateScaled via an explicit STATICCALL.
+    function oraclePricePairStateScaledViaStaticCall(
+        uint8 oracleType,
+        string memory base,
+        string memory quote,
+        uint32 baseDecimals,
+        uint32 quoteDecimals
+    ) external view returns (IOracleModule.PricePairState memory state) {
+        bytes memory data = abi.encodeWithSelector(
+            IOracleModule.oraclePricePairStateScaled.selector,
+            oracleType,
+            base,
+            quote,
+            baseDecimals,
+            quoteDecimals
+        );
+        (bool success, bytes memory result) = oracleContract.staticcall(data);
+        require(success, "staticcall failed");
+        state = abi.decode(result, (IOracleModule.PricePairState));
+    }
 }

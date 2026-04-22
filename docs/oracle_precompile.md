@@ -14,11 +14,35 @@ It is read-only and supports all active oracle types on the Injective chain.
 
 ```solidity
 interface IOracleModule {
+    struct PricePairState {
+        uint256 pairPrice;
+        uint256 basePrice;
+        uint256 quotePrice;
+        uint256 baseCumulativePrice;
+        uint256 quoteCumulativePrice;
+        uint64  baseTimestamp;
+        uint64  quoteTimestamp;
+    }
+
     function oraclePrice(
         uint8 oracleType,
         string calldata base,
         string calldata quote
     ) external view returns (uint256 price);
+
+    function oraclePricePairState(
+        uint8 oracleType,
+        string calldata base,
+        string calldata quote
+    ) external view returns (PricePairState memory state);
+
+    function oraclePricePairStateScaled(
+        uint8 oracleType,
+        string calldata base,
+        string calldata quote,
+        uint32 baseDecimals,
+        uint32 quoteDecimals
+    ) external view returns (PricePairState memory state);
 }
 ```
 
@@ -75,15 +99,74 @@ base  = asset symbol or compound key
 quote = provider name, e.g. "prov1"
 ```
 
+## Methods
+
+### `oraclePrice`
+
+Returns only the pair price as a `uint256` scalar.  Sufficient for simple price
+consumers that do not need timestamps or per-leg prices.
+
+### `oraclePricePairState`
+
+Returns the full `PricePairState` struct:
+
+| Field | Description |
+|-------|-------------|
+| `pairPrice` | base/quote ratio, 1e18 scaled |
+| `basePrice` | raw base-leg spot price, 1e18 scaled |
+| `quotePrice` | raw quote-leg spot price, 1e18 scaled; **0** when `quote == "USD"` |
+| `baseCumulativePrice` | cumulative base price for TWAP computation, 1e18 scaled |
+| `quoteCumulativePrice` | cumulative quote price for TWAP computation, 1e18 scaled; **0** when `quote == "USD"` |
+| `baseTimestamp` | Unix seconds of the most recent base-leg update |
+| `quoteTimestamp` | Unix seconds of the most recent quote-leg update; **== baseTimestamp** when `quote == "USD"` |
+
+Use this method when you need the update timestamp (e.g. for a Chainlink
+`latestRoundData()` `updatedAt` field) or individual leg prices.
+
+### `oraclePricePairStateScaled`
+
+Same as `oraclePricePairState` but applies explicit decimal scaling to
+`pairPrice`:
+
+```
+pairPrice = baseRate * 10^quoteDecimals / (quoteRate * 10^baseDecimals)
+```
+
+**Allowed only when:**
+- `oracleType != PriceFeed (2)`
+- `quote != "USD"`
+
+Any other combination reverts with `OraclePriceNotFound`.
+
+The individual leg prices (`basePrice`, `quotePrice`), cumulative prices, and
+timestamps are **not** rescaled; only `pairPrice` is affected.
+
+## USD-quote zero-fill convention
+
+When `quote == "USD"`, the on-chain oracle module uses a single-leg price state
+(there is no quote-side price feed for USD itself).  The precompile reflects this:
+
+- `quotePrice` and `quoteCumulativePrice` are **0**
+- `quoteTimestamp` is set to **`baseTimestamp`**
+
+Callers building a `latestRoundData()` implementation should use
+`min(baseTimestamp, quoteTimestamp)` as `updatedAt`, which collapses to
+`baseTimestamp` for USD pairs.
+
 ## Error behaviour
 
-The call reverts with an `OraclePriceNotFound` error when:
+All methods revert with an `OraclePriceNotFound` error when:
 
 - No price has been posted for the requested `(oracleType, base, quote)` triple.
 - A deprecated oracle type (Band=1, Chainlink=4, BandIBC=10) is requested.
 - An unrecognised `oracleType` value is passed.
+- `oraclePricePairStateScaled` is called with `oracleType == PriceFeed` or `quote == "USD"`.
 
-## Example usage
+## Example: Chainlink AggregatorV3Interface wrapper
+
+The following example demonstrates how to wrap the precompile to implement
+Chainlink's `latestRoundData()`.  This covers the majority of Chainlink
+consumers (Aave v3, Morpho, etc.) that only call `latestRoundData()`.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -91,15 +174,87 @@ pragma solidity ^0.8.20;
 
 import "./Oracle.sol";
 
-contract PriceConsumer {
-    IOracleModule constant oracle =
+/// @notice Minimal Chainlink AggregatorV3Interface implementation backed by
+///         the Injective oracle precompile.
+///
+/// @dev Deploy one instance per market pair.  Constructor arguments:
+///        oracleType_  — numeric oracle type (e.g. 2 for PriceFeed)
+///        base_        — base asset symbol (e.g. "BTC")
+///        quote_       — quote asset symbol (e.g. "USD")
+///        decimals_    — number of decimals to report (e.g. 8)
+///
+///      The precompile returns prices as 1e18-scaled uint256 values.  This
+///      wrapper rescales to the declared decimals_ precision.
+contract InjectiveChainlinkFeed {
+    IOracleModule constant ORACLE =
         IOracleModule(0x0000000000000000000000000000000000000067);
 
     uint256 constant PRICE_SCALE = 1e18;
 
-    /// @return The BTC/USD price with 18-decimal precision, scaled by 1e18.
-    function getBtcUsdPrice() external view returns (uint256) {
-        return oracle.oraclePrice(2 /* PriceFeed */, "BTC", "USD");
+    uint8 public immutable decimals;
+    string public description;
+
+    uint8  private immutable _oracleType;
+    string private _base;
+    string private _quote;
+
+    constructor(
+        uint8  oracleType_,
+        string memory base_,
+        string memory quote_,
+        uint8  decimals_,
+        string memory description_
+    ) {
+        _oracleType  = oracleType_;
+        _base        = base_;
+        _quote       = quote_;
+        decimals     = decimals_;
+        description  = description_;
+    }
+
+    function version() external pure returns (uint256) { return 1; }
+
+    /// @notice Returns the latest price data in Chainlink format.
+    ///
+    /// @dev roundId and answeredInRound are derived from updatedAt (unix
+    ///      seconds) as a stable monotonic approximation.  Two updates within
+    ///      the same second produce the same roundId; this is acceptable for
+    ///      the use-cases this wrapper targets.
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80  roundId,
+            int256  answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80  answeredInRound
+        )
+    {
+        IOracleModule.PricePairState memory state =
+            ORACLE.oraclePricePairState(_oracleType, _base, _quote);
+
+        // Rescale from 1e18 to the declared decimals precision.
+        uint256 scaledPrice =
+            state.pairPrice * (10 ** uint256(decimals)) / PRICE_SCALE;
+
+        // Use the stalest leg's timestamp as updatedAt.
+        updatedAt = state.baseTimestamp < state.quoteTimestamp
+            ? state.baseTimestamp
+            : state.quoteTimestamp;
+
+        roundId        = uint80(updatedAt);
+        answer         = int256(scaledPrice);
+        startedAt      = updatedAt;
+        answeredInRound = roundId;
+    }
+
+    function getRoundData(uint80)
+        external
+        pure
+        returns (uint80, int256, uint256, uint256, uint80)
+    {
+        revert("historical rounds not supported");
     }
 }
 ```
