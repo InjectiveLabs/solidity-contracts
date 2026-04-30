@@ -16,11 +16,12 @@ import {PythStructs} from "pyth-crosschain/target_chains/ethereum/sdk/solidity/P
 /// official `PythAggregatorV3` contract, which expects an `IPyth` contract plus
 /// a `priceId`.
 contract InjectivePyth is IPyth {
-    IOracleModule internal constant ORACLE =
-        IOracleModule(0x0000000000000000000000000000000000000067);
+    IOracleModule internal constant ORACLE = IOracleModule(0x0000000000000000000000000000000000000067);
 
+    uint256 internal constant MAX_INT64 = uint256(uint64(type(int64).max));
     uint8 internal constant PYTH_ORACLE_TYPE = 9;
     uint256 internal constant PRECOMPILE_PRICE_SCALE = 1e18;
+    string internal constant PYTH_USD_QUOTE = "USD";
 
     bytes32 public immutable FEED_ID;
     uint8 public immutable FEED_DECIMALS;
@@ -28,7 +29,7 @@ contract InjectivePyth is IPyth {
     string public sourceBase;
     string public sourceQuote;
 
-    error UnsupportedPythMethod();
+    error RefundFailed();
 
     constructor(
         bytes32 feedId_,
@@ -48,98 +49,98 @@ contract InjectivePyth is IPyth {
         }
 
         if (sourceOracleType_ == PYTH_ORACLE_TYPE && bytes(sourceQuote_).length == 0) {
-            sourceQuote = "USD";
+            sourceQuote = PYTH_USD_QUOTE;
         } else {
             sourceQuote = sourceQuote_;
         }
     }
 
-    function getPriceUnsafe(
-        bytes32 id
-    ) external view override returns (PythStructs.Price memory price) {
+    function getPriceUnsafe(bytes32 id) external view override returns (PythStructs.Price memory price) {
         return _latestPrice(id);
     }
 
-    function getPriceNoOlderThan(
-        bytes32 id,
-        uint age
-    ) external view override returns (PythStructs.Price memory price) {
+    function getPriceNoOlderThan(bytes32 id, uint256 age)
+        external
+        view
+        override
+        returns (PythStructs.Price memory price)
+    {
         price = _latestPrice(id);
-        if (block.timestamp > price.publishTime + age) revert PythErrors.StalePrice();
+        _revertIfStale(price.publishTime, age);
     }
 
-    function getEmaPriceUnsafe(
-        bytes32
-    ) external pure override returns (PythStructs.Price memory) {
-        revert UnsupportedPythMethod();
+    function getEmaPriceUnsafe(bytes32 id) external view override returns (PythStructs.Price memory price) {
+        return _latestPrice(id);
     }
 
-    function getEmaPriceNoOlderThan(
-        bytes32,
-        uint
-    ) external pure override returns (PythStructs.Price memory) {
-        revert UnsupportedPythMethod();
+    function getEmaPriceNoOlderThan(bytes32 id, uint256 age)
+        external
+        view
+        override
+        returns (PythStructs.Price memory price)
+    {
+        price = _latestPrice(id);
+        _revertIfStale(price.publishTime, age);
     }
 
     function updatePriceFeeds(bytes[] calldata) external payable override {
         _refundValue();
     }
 
-    function updatePriceFeedsIfNecessary(
-        bytes[] calldata,
-        bytes32[] calldata,
-        uint64[] calldata
-    ) external payable override {
+    function updatePriceFeedsIfNecessary(bytes[] calldata, bytes32[] calldata, uint64[] calldata)
+        external
+        payable
+        override
+    {
         _refundValue();
     }
 
-    function getUpdateFee(
-        bytes[] calldata
-    ) external pure override returns (uint feeAmount) {
+    function getUpdateFee(bytes[] calldata) external pure override returns (uint256 feeAmount) {
         return 0;
     }
 
-    function getTwapUpdateFee(
-        bytes[] calldata
-    ) external pure override returns (uint feeAmount) {
+    function getTwapUpdateFee(bytes[] calldata) external pure override returns (uint256 feeAmount) {
         return 0;
     }
 
-    function parsePriceFeedUpdates(
-        bytes[] calldata,
-        bytes32[] calldata,
-        uint64,
-        uint64
-    ) external payable override returns (PythStructs.PriceFeed[] memory) {
-        revert UnsupportedPythMethod();
+    function parsePriceFeedUpdates(bytes[] calldata, bytes32[] calldata, uint64, uint64)
+        external
+        payable
+        override
+        returns (PythStructs.PriceFeed[] memory priceFeeds)
+    {
+        _refundValue();
+        return new PythStructs.PriceFeed[](0);
     }
 
-    function parsePriceFeedUpdatesWithConfig(
-        bytes[] calldata,
-        bytes32[] calldata,
-        uint64,
-        uint64,
-        bool,
-        bool,
-        bool
-    ) external payable override returns (PythStructs.PriceFeed[] memory, uint64[] memory) {
-        revert UnsupportedPythMethod();
+    function parsePriceFeedUpdatesWithConfig(bytes[] calldata, bytes32[] calldata, uint64, uint64, bool, bool, bool)
+        external
+        payable
+        override
+        returns (PythStructs.PriceFeed[] memory priceFeeds, uint64[] memory slots)
+    {
+        _refundValue();
+        return (new PythStructs.PriceFeed[](0), new uint64[](0));
     }
 
-    function parseTwapPriceFeedUpdates(
-        bytes[] calldata,
-        bytes32[] calldata
-    ) external payable override returns (PythStructs.TwapPriceFeed[] memory) {
-        revert UnsupportedPythMethod();
+    function parseTwapPriceFeedUpdates(bytes[] calldata, bytes32[] calldata)
+        external
+        payable
+        override
+        returns (PythStructs.TwapPriceFeed[] memory twapPriceFeeds)
+    {
+        _refundValue();
+        return new PythStructs.TwapPriceFeed[](0);
     }
 
-    function parsePriceFeedUpdatesUnique(
-        bytes[] calldata,
-        bytes32[] calldata,
-        uint64,
-        uint64
-    ) external payable override returns (PythStructs.PriceFeed[] memory) {
-        revert UnsupportedPythMethod();
+    function parsePriceFeedUpdatesUnique(bytes[] calldata, bytes32[] calldata, uint64, uint64)
+        external
+        payable
+        override
+        returns (PythStructs.PriceFeed[] memory priceFeeds)
+    {
+        _refundValue();
+        return new PythStructs.PriceFeed[](0);
     }
 
     function _latestPrice(bytes32 id) internal view returns (PythStructs.Price memory price) {
@@ -148,28 +149,31 @@ contract InjectivePyth is IPyth {
         IOracleModule.PricePairState memory state =
             ORACLE.oraclePricePairState(SOURCE_ORACLE_TYPE, sourceBase, sourceQuote);
 
-        uint256 scaledPrice = Math.mulDiv(
-            state.pairPrice,
-            10 ** uint256(FEED_DECIMALS),
-            PRECOMPILE_PRICE_SCALE
-        );
-        if (scaledPrice > uint256(uint64(type(int64).max))) revert PythErrors.CombinedPriceOverflow();
-
-        uint256 publishTime = state.baseTimestamp < state.quoteTimestamp ? state.baseTimestamp : state.quoteTimestamp;
+        uint256 scaledPrice = Math.mulDiv(state.pairPrice, 10 ** uint256(FEED_DECIMALS), PRECOMPILE_PRICE_SCALE);
+        if (scaledPrice > MAX_INT64) revert PythErrors.CombinedPriceOverflow();
 
         price = PythStructs.Price({
             // forge-lint: disable-next-line(unsafe-typecast)
             price: int64(uint64(scaledPrice)),
             conf: 0,
             expo: -int32(uint32(FEED_DECIMALS)),
-            publishTime: publishTime
+            publishTime: _updatedAt(state)
         });
+    }
+
+    function _revertIfStale(uint256 publishTime, uint256 age) internal view {
+        if (publishTime > block.timestamp) revert PythErrors.StalePrice();
+        if (block.timestamp - publishTime > age) revert PythErrors.StalePrice();
+    }
+
+    function _updatedAt(IOracleModule.PricePairState memory state) internal pure returns (uint256) {
+        return state.baseTimestamp < state.quoteTimestamp ? state.baseTimestamp : state.quoteTimestamp;
     }
 
     function _refundValue() internal {
         if (msg.value == 0) return;
 
-        (bool success, ) = payable(msg.sender).call{value: msg.value}("");
-        require(success, "refund failed");
+        (bool success,) = payable(msg.sender).call{value: msg.value}("");
+        if (!success) revert RefundFailed();
     }
 }
