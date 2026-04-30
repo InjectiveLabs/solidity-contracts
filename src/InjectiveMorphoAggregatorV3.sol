@@ -51,7 +51,8 @@ contract InjectiveMorphoAggregatorV3 is AggregatorV3Interface {
         override
         returns (uint80 returnedRoundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
-        return _roundData(roundId);
+        (answer, updatedAt) = _latestAnswerAndTimestamp();
+        return (roundId, answer, updatedAt, updatedAt, roundId);
     }
 
     function latestRoundData()
@@ -60,40 +61,16 @@ contract InjectiveMorphoAggregatorV3 is AggregatorV3Interface {
         override
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
-        IOracleModule.PricePairState memory state = _latestState();
-        updatedAt = _updatedAt(state);
+        (answer, updatedAt) = _latestAnswerAndTimestamp();
         // forge-lint: disable-next-line(unsafe-typecast)
         roundId = uint80(updatedAt);
-        return _roundData(roundId, state, updatedAt);
-    }
-
-    function _roundData(uint80 roundId)
-        internal
-        view
-        returns (uint80 returnedRoundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
-    {
-        IOracleModule.PricePairState memory state = _latestState();
-        updatedAt = _updatedAt(state);
-        return _roundData(roundId, state, updatedAt);
-    }
-
-    function _roundData(uint80 roundId, IOracleModule.PricePairState memory state, uint256 updatedAt)
-        internal
-        view
-        returns (
-            uint80 returnedRoundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 returnedUpdatedAt,
-            uint80 answeredInRound
-        )
-    {
-        answer = _scaledAnswer(state.pairPrice);
         return (roundId, answer, updatedAt, updatedAt, roundId);
     }
 
-    function _latestState() internal view returns (IOracleModule.PricePairState memory) {
-        return ORACLE.oraclePricePairState(oracleType, base, quote);
+    function _latestAnswerAndTimestamp() internal view returns (int256 answer, uint256 updatedAt) {
+        IOracleModule.PricePairState memory state = ORACLE.oraclePricePairState(oracleType, base, quote);
+        updatedAt = _updatedAt(state);
+        answer = _scaledAnswer(state.pairPrice);
     }
 
     function _updatedAt(IOracleModule.PricePairState memory state) internal pure returns (uint256) {
