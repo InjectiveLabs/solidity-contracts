@@ -15,6 +15,10 @@ import {PythStructs} from "pyth-crosschain/target_chains/ethereum/sdk/solidity/P
 /// @dev This adapter is intentionally feed-specific. It exists to satisfy the
 /// official `PythAggregatorV3` contract, which expects an `IPyth` contract plus
 /// a `priceId`.
+///
+/// Injective already stores oracle prices natively on-chain, so this adapter
+/// does not implement the full stateful Pyth update/parsing workflow. The
+/// payable update and parse methods below are compatibility shims only.
 contract InjectivePyth is IPyth {
     IOracleModule internal constant ORACLE = IOracleModule(0x0000000000000000000000000000000000000067);
 
@@ -70,6 +74,9 @@ contract InjectivePyth is IPyth {
     }
 
     function getEmaPriceUnsafe(bytes32 id) external view override returns (PythStructs.Price memory price) {
+        // Partial implementation: the precompile does not expose EMA data in
+        // Pyth's format, so this adapter aliases EMA reads to the latest spot
+        // price instead of attempting to synthesize a separate series.
         return _latestPrice(id);
     }
 
@@ -84,6 +91,8 @@ contract InjectivePyth is IPyth {
     }
 
     function updatePriceFeeds(bytes[] calldata) external payable override {
+        // No-op compatibility method. Native Injective oracle data is already
+        // on-chain, so there is no signed update blob to submit here.
         _refundValue();
     }
 
@@ -92,14 +101,17 @@ contract InjectivePyth is IPyth {
         payable
         override
     {
+        // No-op for the same reason as `updatePriceFeeds`.
         _refundValue();
     }
 
     function getUpdateFee(bytes[] calldata) external pure override returns (uint256 feeAmount) {
+        // No external update payload is consumed, so there is no fee model.
         return 0;
     }
 
     function getTwapUpdateFee(bytes[] calldata) external pure override returns (uint256 feeAmount) {
+        // TWAP update blobs are not consumed either.
         return 0;
     }
 
@@ -109,6 +121,8 @@ contract InjectivePyth is IPyth {
         override
         returns (PythStructs.PriceFeed[] memory priceFeeds)
     {
+        // No-op compatibility method. This adapter does not parse Pyth update
+        // messages because the price source is the native oracle precompile.
         _refundValue();
         return new PythStructs.PriceFeed[](0);
     }
@@ -119,6 +133,7 @@ contract InjectivePyth is IPyth {
         override
         returns (PythStructs.PriceFeed[] memory priceFeeds, uint64[] memory slots)
     {
+        // Same as `parsePriceFeedUpdates`: keep the ABI, return no parsed data.
         _refundValue();
         return (new PythStructs.PriceFeed[](0), new uint64[](0));
     }
@@ -129,6 +144,7 @@ contract InjectivePyth is IPyth {
         override
         returns (PythStructs.TwapPriceFeed[] memory twapPriceFeeds)
     {
+        // Partial implementation: no TWAP feed translation is provided here.
         _refundValue();
         return new PythStructs.TwapPriceFeed[](0);
     }
@@ -139,6 +155,7 @@ contract InjectivePyth is IPyth {
         override
         returns (PythStructs.PriceFeed[] memory priceFeeds)
     {
+        // Same no-op behavior as the other parse methods.
         _refundValue();
         return new PythStructs.PriceFeed[](0);
     }

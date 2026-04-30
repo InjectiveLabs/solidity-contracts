@@ -12,6 +12,10 @@ import {AggregatorV3Interface} from "morpho-blue-oracles/src/morpho-chainlink/in
 /// @dev This contract is meant to satisfy Morpho's
 /// `AggregatorV3Interface` dependency. It exposes only the standard
 /// Chainlink-compatible surface that Morpho consumes.
+///
+/// Historical Chainlink rounds are not stored. Any round-based read is served
+/// from the latest precompile snapshot because the underlying oracle module
+/// exposes latest state, not per-round history.
 contract InjectiveMorphoAggregatorV3 is AggregatorV3Interface {
     IOracleModule internal constant ORACLE = IOracleModule(0x0000000000000000000000000000000000000067);
 
@@ -51,6 +55,9 @@ contract InjectiveMorphoAggregatorV3 is AggregatorV3Interface {
         override
         returns (uint80 returnedRoundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
+        // Partial AggregatorV3 emulation: return the latest snapshot and echo
+        // the caller-provided round id, since no historical round storage
+        // exists behind the precompile.
         (answer, updatedAt) = _latestAnswerAndTimestamp();
         return (roundId, answer, updatedAt, updatedAt, roundId);
     }
