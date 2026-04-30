@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 
 import {IOracleModule} from "../Oracle.sol";
-import {InjectiveMorphoAggregatorV3} from "../InjectiveMorphoAggregatorV3.sol";
+import {InjectiveAggregatorV3} from "../InjectiveAggregatorV3.sol";
 import {InjectivePyth} from "../InjectivePyth.sol";
 import {PythAggregatorV3} from "pyth-crosschain/target_chains/ethereum/sdk/solidity/PythAggregatorV3.sol";
 import {PythStructs} from "pyth-crosschain/target_chains/ethereum/sdk/solidity/PythStructs.sol";
@@ -205,7 +205,7 @@ contract InjectiveOracleWrappersTest is Test {
             })
         );
 
-        InjectiveMorphoAggregatorV3 feed = new InjectiveMorphoAggregatorV3(
+        InjectiveAggregatorV3 feed = new InjectiveAggregatorV3(
             ORACLE_TYPE_PYTH,
             "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
             "USD",
@@ -255,14 +255,14 @@ contract InjectiveOracleWrappersTest is Test {
             })
         );
 
-        InjectiveMorphoAggregatorV3 btcUsd = new InjectiveMorphoAggregatorV3(
+        InjectiveAggregatorV3 btcUsd = new InjectiveAggregatorV3(
             ORACLE_TYPE_PYTH,
             "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
             "USD",
             8,
             "Injective Pyth BTC / USD"
         );
-        InjectiveMorphoAggregatorV3 usdcUsd = new InjectiveMorphoAggregatorV3(
+        InjectiveAggregatorV3 usdcUsd = new InjectiveAggregatorV3(
             ORACLE_TYPE_PYTH,
             "0xeaa020c61cc479712813461ce153894a96a6c00b21ed0cfcfdb74db759d5e0b3",
             "USD",

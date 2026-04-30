@@ -16,7 +16,7 @@ import {AggregatorV3Interface} from "morpho-blue-oracles/src/morpho-chainlink/in
 /// Historical Chainlink rounds are not stored. Any round-based read is served
 /// from the latest precompile snapshot because the underlying oracle module
 /// exposes latest state, not per-round history.
-contract InjectiveMorphoAggregatorV3 is AggregatorV3Interface {
+contract InjectiveAggregatorV3 is AggregatorV3Interface {
     IOracleModule internal constant ORACLE = IOracleModule(0x0000000000000000000000000000000000000067);
 
     uint256 internal constant MAX_INT256 = uint256(type(int256).max);
