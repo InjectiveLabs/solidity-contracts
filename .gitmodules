@@ -10,3 +10,10 @@
 [submodule "lib/openzeppelin-contracts-upgradeable"]
 	path = lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
+[submodule "lib/pyth-crosschain"]
+	path = lib/pyth-crosschain
+	url = https://github.com/pyth-network/pyth-crosschain
+	branch = main
+[submodule "lib/morpho-blue-oracles"]
+	path = lib/morpho-blue-oracles
+	url = https://github.com/morpho-org/morpho-blue-oracles
