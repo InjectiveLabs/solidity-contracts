@@ -7,11 +7,7 @@ import {IIBCModule} from "../IBC.sol";
 contract IBCTest {
     error ForcedRevert();
 
-    IIBCModule public immutable IBC;
-
-    constructor(address ibcAddress) {
-        IBC = IIBCModule(ibcAddress);
-    }
+    IIBCModule public constant IBC = IIBCModule(0x0000000000000000000000000000000000000069);
 
     function transfer(
         string calldata sourceChannel,

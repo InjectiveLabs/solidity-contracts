@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 /// @title Injective IBC transfer precompile
 /// @notice Initiates ICS-20 transfers from EVM accounts and contracts.
+/// @dev Deployed at 0x0000000000000000000000000000000000000069.
 interface IIBCModule {
     /// @notice Identifies an IBC client revision and a block height within it.
     /// @dev Set both fields to zero to disable the height-based timeout.

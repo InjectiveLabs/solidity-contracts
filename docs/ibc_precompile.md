@@ -6,8 +6,10 @@ The IBC transfer precompile lets an EVM account or contract initiate an
 ICS-20 transfer. Its Solidity interface is `IIBCModule`, defined in
 [`src/IBC.sol`](../src/IBC.sol).
 
-The precompile address is intentionally not documented yet. It must be
-allocated when the implementation is registered in `injective-core`.
+| Property | Value |
+|----------|-------|
+| Address | `0x0000000000000000000000000000000000000069` |
+| Interface | `IIBCModule` |
 
 ## Interface
 

@@ -26,7 +26,7 @@ For more details, see the [Staking Precompile documentation](docs/staking_precom
 
 ### IBC Transfer Precompile
 
-The IBC Transfer Precompile allows EVM accounts and contracts to initiate synchronous ICS-20 transfers using mapped Multi-VM Token Standard assets. The caller becomes the authenticated IBC sender, and the packet sequence is returned to the calling contract.
+The IBC Transfer Precompile at `0x0000000000000000000000000000000000000069` allows EVM accounts and contracts to initiate synchronous ICS-20 transfers using mapped Multi-VM Token Standard assets. The caller becomes the authenticated IBC sender, and the packet sequence is returned to the calling contract.
 
 For the proposed interface and transfer semantics, see the [IBC Transfer Precompile documentation](docs/ibc_precompile.md).
 
