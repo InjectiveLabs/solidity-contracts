@@ -97,7 +97,7 @@ interface IExchangeModule {
         ExchangeTypes.UFixed256x18 quantity; // API FORMAT: human-readable scaled by 18 decimals (e.g., 5250000000000000000 = 5.25)
         ExchangeTypes.UFixed256x18 entryPrice; // API FORMAT: human-readable scaled by 18 decimals (e.g., 50123450000000000000000 = 50123.45)
         ExchangeTypes.UFixed256x18 margin; // API FORMAT: human-readable scaled by 18 decimals (e.g., 1000750000000000000000 = 1000.75)
-        ExchangeTypes.UFixed256x18 cumulativeFundingEntry; // API FORMAT: human-readable scaled by 18 decimals
+        int256 cumulativeFundingEntry; // API FORMAT: human-readable scaled by 18 decimals
     }
 
     /****************************************************************************
