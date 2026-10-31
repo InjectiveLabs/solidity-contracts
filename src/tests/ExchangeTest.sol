@@ -91,4 +91,16 @@ contract ExchangeTest {
         exchange.deposit(msg.sender, subaccountID, denom, amount);
         revert("testing");
     }
+
+    function createSpotMarketOrder(
+        IExchangeModule.SpotOrder calldata order
+    ) external returns (IExchangeModule.CreateSpotMarketOrderResponse memory response) {
+        return exchange.createSpotMarketOrder(address(this), order);
+    }
+
+    function createDerivativeMarketOrder(
+        IExchangeModule.DerivativeOrder calldata order
+    ) external returns (IExchangeModule.CreateDerivativeMarketOrderResponse memory response) {
+        return exchange.createDerivativeMarketOrder(address(this), order);
+    }
 }
