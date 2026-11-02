@@ -30,6 +30,12 @@ The IBC Transfer Precompile at `0x0000000000000000000000000000000000000069` allo
 
 For the proposed interface and transfer semantics, see the [IBC Transfer Precompile documentation](docs/ibc_precompile.md).
 
+### Swap Precompile
+
+The Swap Precompile at `0x0000000000000000000000000000000000000068` executes spot swaps against Injective's on-chain orderbook from EVM accounts and contracts. It works like an AMM router: quote, set a minimum output and a deadline, then swap in a single call. The V2 methods report how much of the input was actually spent, so a contract can detect a partial fill on a thin book.
+
+For more details, see the [Swap Precompile documentation](docs/swap_precompile.md) and try out the [Swap demo](demos/swap/README.md).
+
 ## Pre-signed Transactions
 
 ### WINJ9
