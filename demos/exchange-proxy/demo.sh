@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Run from the demo directory: .local.env and the relative paths below assume it.
+cd "$(dirname "$0")" || exit 1
+
 # Load environment variables
 if [ -f ./.local.env ]; then
     source ./.local.env
@@ -8,8 +11,7 @@ else
     exit 1
 fi
 
-: ${INJ_HOME:=~/.injectived}
-echo "User injectived home: $INJ_HOME"
+echo "Chain home (INJHOME): $INJHOME"
 
 ################################################################################
 
@@ -70,7 +72,12 @@ else
         --mnemonic "$USER_MNEMONIC"
 fi
 echo ""
-user_inj_address=$(yes $USER_PWD | injectived --home $INJ_HOME keys show -a $USER)
+user_inj_address=$(yes $USER_PWD | injectived --home "$INJHOME" keys show -a $USER)
+if [ -z "$user_inj_address" ]; then
+    echo "Error: key $USER not found in the chain home $INJHOME."
+    echo "Start the chain with demos/localnet/start.sh, and export the same INJHOME for both."
+    exit 1
+fi
 user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
 user_subaccount_id="$user_eth_address"000000000000000000000001
 echo "User INJ address: $user_inj_address"
@@ -82,7 +89,7 @@ echo "2) Depositing funds to user subaccount..."
 # deposit 1000 USDT into the user's subaccount
 deposit_res=$(yes 12345678 | injectived tx exchange deposit 1000000000$QUOTE $user_subaccount_id \
     --chain-id $CHAIN_ID \
-    --home $INJ_HOME \
+    --home "$INJHOME" \
     --from $USER \
     --fees 500000inj \
     --output json \

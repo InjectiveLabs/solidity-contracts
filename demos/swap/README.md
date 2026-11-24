@@ -86,5 +86,5 @@ exit (in Docker, it removes the `swap-demo-injectived` container).
 |---|---|---|
 | `INJECTIVED` | `injectived` | Path to the node binary |
 | `INJECTIVED_IMAGE` | unset | Docker image to run `injectived` from instead |
-| `SWAP_DEMO_HOME` | `.injectived-swap-demo` | Chain home, wiped on every run |
+| `SWAP_DEMO_HOME` | `.injectived-swap-demo` | Chain home, wiped on every run. A relative path is taken from the directory you start the demo in. The demo only wipes a directory it created |
 | `KEEP_NODE` | `0` | `1` leaves the node running afterwards |

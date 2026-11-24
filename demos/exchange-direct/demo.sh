@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Run from the demo directory: .local.env and the relative paths below assume it.
+cd "$(dirname "$0")" || exit 1
+
 # Load environment variables
 if [ -f ./.local.env ]; then
     source ./.local.env
@@ -8,8 +11,7 @@ else
     exit 1
 fi
 
-: ${INJ_HOME:=~/.injectived}
-echo "User injectived home: $INJ_HOME"
+echo "Chain home (INJHOME): $INJHOME"
 
 ################################################################################
 
@@ -99,7 +101,7 @@ echo "3) Funding contract..."
 # send 5000  USDT to the contract (equal to 5000*10^6 usdt because USDT has 6 decimals)
 fund_res=$(yes $USER_PWD | injectived tx bank send \
     -y \
-    --home $INJ_HOME \
+    --home "$INJHOME" \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
     --fees 500000inj \

@@ -10,9 +10,13 @@
 # injectivelabs/injective-core image), forge + cast, jq, python3.
 # Run from anywhere: ./demos/swap/demo.sh
 
-set -euo pipefail
+set -eEuo pipefail
+# Some steps hide their output; name the command that failed instead of
+# exiting silently.
+trap 'printf "\033[31mERROR: line %s failed: %s\033[0m\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+INVOKE_DIR="$PWD"
 cd "$REPO_ROOT"
 
 INJECTIVED="${INJECTIVED:-injectived}"
@@ -20,12 +24,14 @@ INJECTIVED="${INJECTIVED:-injectived}"
 # Without a local injectived, the demo falls back to Docker on its own.
 INJECTIVED_IMAGE="${INJECTIVED_IMAGE:-}"
 DEFAULT_IMAGE="injectivelabs/injective-core:v1.21.0"
-HOME_DIR="${SWAP_DEMO_HOME:-$REPO_ROOT/.injectived-swap-demo}"
+DEFAULT_HOME_DIR="$REPO_ROOT/.injectived-swap-demo"
+HOME_DIR="${SWAP_DEMO_HOME:-$DEFAULT_HOME_DIR}"
 KEEP_NODE="${KEEP_NODE:-0}"
 CONTAINER="swap-demo-injectived"
+NODE_CONTAINER_ID="" # set only once this run has created the node container
+NODE_PID=""
 
 CHAIN_ID="injective-1"
-KR=(--keyring-backend test --home "$HOME_DIR")
 TXF=(--chain-id "$CHAIN_ID" --gas-prices 160000000inj --yes --broadcast-mode sync --output json)
 RPC_PORT=26657
 EVM_PORT=8545
@@ -42,6 +48,20 @@ NET_FEE="0.0015" # taker 0.1% x atomic multiplier 2.5, minus the 40% relayer sha
 
 log() { printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
 fail() { printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
+
+# The chain home must be absolute (Docker mounts it at the same path). A
+# relative SWAP_DEMO_HOME is taken relative to where the demo was started.
+case "$HOME_DIR" in
+    /*) ;;
+    *) HOME_DIR="$INVOKE_DIR/$HOME_DIR" ;;
+esac
+HOME_DIR="${HOME_DIR%/}"
+case "$(basename "$HOME_DIR")" in
+    "" | . | ..) fail "SWAP_DEMO_HOME must name a directory, got: $HOME_DIR" ;;
+esac
+mkdir -p "$(dirname "$HOME_DIR")"
+HOME_DIR="$(cd "$(dirname "$HOME_DIR")" && pwd)/$(basename "$HOME_DIR")"
+KR=(--keyring-backend test --home "$HOME_DIR")
 # Formats a chain-format amount with the given decimals.
 fmt() { python3 -c "from decimal import Decimal as D; print(f'{D(int(\"$1\"))/D(10**$2):f}')"; }
 
@@ -69,9 +89,9 @@ DOCKER_USER=(--user "$(id -u):$(id -g)" -e HOME=/tmp)
 inj() {
     if [ -z "$INJECTIVED_IMAGE" ]; then
         "$INJECTIVED" "$@"
-    elif [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2> /dev/null)" = "true" ]; then
-        # Shares the node's network, so 127.0.0.1:$RPC_PORT reaches it.
-        docker exec -i "${DOCKER_USER[@]}" "$CONTAINER" injectived "$@"
+    elif [ -n "$NODE_CONTAINER_ID" ]; then
+        # This run's node. Shares its network, so 127.0.0.1:$RPC_PORT reaches it.
+        docker exec -i "${DOCKER_USER[@]}" "$NODE_CONTAINER_ID" injectived "$@"
     else
         docker run --rm -i "${DOCKER_USER[@]}" -v "$HOME_DIR:$HOME_DIR" \
             --entrypoint injectived "$INJECTIVED_IMAGE" "$@"
@@ -164,17 +184,18 @@ num() { awk '{print $1}'; }
 
 deadline() { echo $(( $(date +%s) + 300 )); }
 
+# Stops only a node this run started, never one left by an earlier run.
 cleanup() {
     [ "$KEEP_NODE" = "1" ] && return
-    if [ -n "$INJECTIVED_IMAGE" ]; then
-        docker rm -f "$CONTAINER" > /dev/null 2>&1 || true
-    elif [ -n "${NODE_PID:-}" ]; then
+    if [ -n "$NODE_CONTAINER_ID" ]; then
+        docker rm -f "$NODE_CONTAINER_ID" > /dev/null 2>&1 || true
+    elif [ -n "$NODE_PID" ]; then
         kill "$NODE_PID" 2> /dev/null || true
     fi
 }
 node_alive() {
     if [ -n "$INJECTIVED_IMAGE" ]; then
-        [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2> /dev/null)" = "true" ]
+        [ "$(docker inspect -f '{{.State.Running}}' "$NODE_CONTAINER_ID" 2> /dev/null)" = "true" ]
     else
         kill -0 "$NODE_PID" 2> /dev/null
     fi
@@ -189,6 +210,11 @@ echo "ok"
 log "1) Fresh chain in $HOME_DIR"
 ################################################################################
 
+# A container by this name is a node an earlier run kept (KEEP_NODE=1); leave
+# it to the user rather than removing it.
+if [ -n "$INJECTIVED_IMAGE" ] && docker inspect "$CONTAINER" > /dev/null 2>&1; then
+    fail "container $CONTAINER exists from an earlier run (KEEP_NODE=1?); remove it with: docker rm -f $CONTAINER"
+fi
 for port in $RPC_PORT $EVM_PORT $GRPC_PORT $API_PORT; do
     if lsof -nP -iTCP:"$port" -sTCP:LISTEN > /dev/null 2>&1; then
         fail "port $port is in use; stop the process using it first"
@@ -196,11 +222,15 @@ for port in $RPC_PORT $EVM_PORT $GRPC_PORT $API_PORT; do
 done
 
 if [ -n "$INJECTIVED_IMAGE" ]; then
-    docker rm -f "$CONTAINER" > /dev/null 2>&1 || true
     docker image inspect "$INJECTIVED_IMAGE" > /dev/null 2>&1 || docker pull "$INJECTIVED_IMAGE"
+fi
+# Each run wipes the chain home, so only ever wipe one this demo created.
+if [ -e "$HOME_DIR" ] && [ ! -f "$HOME_DIR/.swap-demo" ] && [ "$HOME_DIR" != "$DEFAULT_HOME_DIR" ]; then
+    fail "$HOME_DIR exists and was not created by this demo; remove it or set SWAP_DEMO_HOME"
 fi
 rm -rf "$HOME_DIR"
 mkdir -p "$HOME_DIR"
+touch "$HOME_DIR/.swap-demo"
 inj init swap-demo --chain-id "$CHAIN_ID" --home "$HOME_DIR" > /dev/null 2>&1
 for key in val dev1 dev2; do
     inj keys add "$key" "${KR[@]}" > /dev/null 2>&1
@@ -254,9 +284,9 @@ if [ -n "$INJECTIVED_IMAGE" ]; then
     for port in $RPC_PORT $EVM_PORT $GRPC_PORT $API_PORT; do
         ports+=(-p "127.0.0.1:$port:$port")
     done
-    docker run -d --name "$CONTAINER" "${DOCKER_USER[@]}" -v "$HOME_DIR:$HOME_DIR" "${ports[@]}" \
+    NODE_CONTAINER_ID=$(docker run -d --name "$CONTAINER" "${DOCKER_USER[@]}" -v "$HOME_DIR:$HOME_DIR" "${ports[@]}" \
         --entrypoint sh "$INJECTIVED_IMAGE" -c 'exec injectived "$@" > "$0" 2>&1' \
-        "$HOME_DIR/node.log" "${start_args[@]}" > /dev/null
+        "$HOME_DIR/node.log" "${start_args[@]}")
     NODE_DESC="container $CONTAINER ($INJECTIVED_IMAGE)"
 else
     "$INJECTIVED" "${start_args[@]}" > "$HOME_DIR/node.log" 2>&1 &

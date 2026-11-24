@@ -44,6 +44,34 @@ To stop the chain:
 
 The next `start.sh` wipes the chain and starts a fresh one.
 
+## Chain home (`INJHOME`)
+
+The chain's data and keyring live in one directory, the chain home. The demos
+read `user1`'s key from it, so `start.sh` and the demos must use the same one.
+
+- **Default:** `.injectived` in the repo root. With no `INJHOME` set,
+  `start.sh` and every demo use it; nothing to configure.
+- **Elsewhere:** export `INJHOME` once, as an absolute path, in the shell that
+  runs both `start.sh` and the demos:
+
+  ```
+  export INJHOME=/path/to/chain-home
+  ./demos/localnet/start.sh
+  ```
+
+  `start.sh` resolves a relative `INJHOME` against the current directory and
+  prints the absolute `export` line to use. The demos refuse a relative
+  `INJHOME`, because they run from their own directories.
+- `bin/injectived` refuses a `--home` other than the running chain's and says
+  which `INJHOME` to export.
+- `start.sh` wipes the chain home on every start, but only a directory it
+  created (it leaves a `.localnet` marker). It refuses any other existing
+  directory, so a mistyped `INJHOME` cannot delete your data.
+
+injective-core's own scripts use the same `INJHOME` variable. If your shell
+already exports it for another node, `start.sh` refuses that directory. Unset
+`INJHOME`, or point it at a new directory, before starting the localnet.
+
 ## What it sets up
 
 | | |
@@ -53,8 +81,8 @@ The next `start.sh` wipes the chain and starts a fresh one.
 | Tendermint RPC | `http://localhost:26657` |
 | gRPC | `localhost:9900` |
 | REST | `http://localhost:10337` |
-| Chain home | `.injectived` in the repo root (`file` keyring, passphrase `12345678`) |
-| Node log | `.injectived/node.log` |
+| Chain home | `$INJHOME`, default `.injectived` in the repo root (`file` keyring, passphrase `12345678`) |
+| Node log | `$INJHOME/node.log` |
 
 - **Keys:** `user1` (the test mnemonic in the demos' `.local.env` files) and
   `user2`. Each holds 1,000,000 INJ and 100,000,000 USDT
@@ -70,7 +98,7 @@ The next `start.sh` wipes the chain and starts a fresh one.
 | Variable | Default | Purpose |
 |---|---|---|
 | `INJECTIVED_IMAGE` | `injectivelabs/injective-core:v1.21.0` | Docker image |
-| `INJHOME` | `<repo>/.injectived` | Chain home. `start.sh` only wipes a home it created |
+| `INJHOME` | `<repo>/.injectived` | Chain home, shared with the demos (see above) |
 | `LOCALNET_CONTAINER` | `injective-localnet` | Container name, also used by `bin/injectived` and `stop.sh` |
 
 The node needs ports 26657, 8545, 8546, 9900 and 10337 to be free. Docker

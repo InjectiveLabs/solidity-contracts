@@ -10,13 +10,17 @@
 #
 # Run demos/localnet/stop.sh to stop it. Requirements: docker, jq, curl.
 
-set -euo pipefail
+set -eEuo pipefail
+# Some steps hide their output; name the command that failed instead of
+# exiting silently.
+trap 'printf "\033[31mERROR: line %s failed: %s\033[0m\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 LOCALNET_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$LOCALNET_DIR/../.." && pwd)"
 
 IMAGE="${INJECTIVED_IMAGE:-injectivelabs/injective-core:v1.21.0}"
-INJHOME="${INJHOME:-$REPO_ROOT/.injectived}"
+DEFAULT_INJHOME="$REPO_ROOT/.injectived"
+INJHOME="${INJHOME:-$DEFAULT_INJHOME}"
 CONTAINER="${LOCALNET_CONTAINER:-injective-localnet}"
 
 CHAIN_ID="injective-1"
@@ -37,6 +41,21 @@ fail() { printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 for bin in docker jq curl; do
     command -v "$bin" > /dev/null || fail "$bin not found"
 done
+
+# The chain home must be an absolute path: Docker mounts need one, and the
+# demos run from their own directories. A relative INJHOME is taken relative to
+# the current directory. Symlinks are kept as given (no `pwd -P`), so the
+# mount path is the same string the demos pass to --home.
+case "$INJHOME" in
+    /*) ;;
+    *) INJHOME="$PWD/$INJHOME" ;;
+esac
+INJHOME="${INJHOME%/}"
+case "$(basename "$INJHOME")" in
+    "" | . | ..) fail "INJHOME must name a directory, got: $INJHOME" ;;
+esac
+mkdir -p "$(dirname "$INJHOME")"
+INJHOME="$(cd "$(dirname "$INJHOME")" && pwd)/$(basename "$INJHOME")"
 
 # Files are created as the current user, and the repo (plus INJHOME, if it is
 # elsewhere) is mounted at the same path, so host paths work in the container.
@@ -179,7 +198,9 @@ ports=()
 for port in "${PORTS[@]}"; do
     ports+=(-p "127.0.0.1:$port:$port")
 done
-docker run -d --name "$CONTAINER" "${DOCKER_USER[@]}" "${MOUNTS[@]}" "${ports[@]}" \
+# The label records the chain home; bin/injectived checks --home against it.
+docker run -d --name "$CONTAINER" --label "injective-localnet.home=$INJHOME" \
+    "${DOCKER_USER[@]}" "${MOUNTS[@]}" "${ports[@]}" \
     --entrypoint sh "$IMAGE" -c 'exec injectived "$@" > "$0" 2>&1' "$INJHOME/node.log" \
     start --home "$INJHOME" \
     --rpc.laddr "tcp://0.0.0.0:26657" \
@@ -236,3 +257,6 @@ Run the demos' injectived commands in the container:
 Stop it with:
   $LOCALNET_DIR/stop.sh
 EOF
+if [ "$INJHOME" != "$DEFAULT_INJHOME" ]; then
+    printf '\nThe demos read the chain home from INJHOME. In the shell you run them from:\n  export INJHOME="%s"\n' "$INJHOME"
+fi

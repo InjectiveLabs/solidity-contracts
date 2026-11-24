@@ -56,13 +56,15 @@ export PATH="$(pwd)/demos/localnet/bin:$PATH"
 
 `start.sh` creates the `user1` key and funds it. The `PATH` line
 makes the demo's `injectived` commands run inside the node's container. See
-[`demos/localnet`](../localnet/README.md) for details, using your own
-`injectived` binary instead, and stopping the chain.
+[`demos/localnet`](../localnet/README.md) for details, keeping the chain
+somewhere other than the default (`INJHOME`), using your own `injectived`
+binary instead, and stopping the chain.
 
 ## Run the demo
 
-The script uses the keys in `$INJHOME`, which defaults to the localnet's
-chain home (`.injectived` in the repo root).
+The script uses the keys in the localnet's chain home: `$INJHOME`, or
+`.injectived` in the repo root by default (see
+[`demos/localnet`](../localnet/README.md#chain-home-injhome)).
 
 ```bash
 cd demos/permissions-hook
