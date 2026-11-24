@@ -6,7 +6,7 @@
 # spot market -> swap allowlist -> orderbook liquidity -> SwapDemo contract ->
 # every precompile method, including partial fills and their detection.
 #
-# Requirements: injectived v1.21.0+ (or master), forge + cast, jq, python3.
+# Requirements: injectived v1.21.0+, forge + cast, jq, python3.
 # Run from anywhere: ./demos/swap/demo.sh
 
 set -euo pipefail
@@ -32,6 +32,7 @@ EVM_TX=(--rpc-url "$ETH_URL" --legacy --gas-price 160000000 --gas-limit 2000000)
 
 INJ="0x0000000000000000000000000000000000000000" # address(0) is native INJ
 INJ_TICK=1000000000000000                       # 0.001 INJ, the market's quantity tick
+NET_FEE="0.0015" # taker 0.1% x atomic multiplier 2.5, minus the 40% relayer share the caller gets back
 
 log() { printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
 fail() { printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -115,6 +116,12 @@ contract_balances() {
     usdc=$(cast call "$USDC" "balanceOf(address)(uint256)" "$DEMO" --rpc-url "$ETH_URL" | awk '{print $1}')
     inj=$(cast balance "$DEMO" --rpc-url "$ETH_URL")
     echo "  SwapDemo holds $(fmt "$usdc" 6) USDC, $(fmt "$inj" 18) INJ"
+}
+
+# maxUnspent for a USDC->INJ buy: the remainder is in USDC, so a full fill
+# leaves less than one INJ tick's cost at <price> incl. the net fee.
+buy_max_unspent() {
+    python3 -c "from decimal import Decimal as D; print(int(D('0.001') * D('$1') * (1 + D('$NET_FEE')) * 10**6))"
 }
 
 # Strips cast's "[1e18]" annotations from a uint256 output line.
@@ -303,11 +310,16 @@ log "8) swapExactInputV2: buy INJ with 50 USDC, minOut from a limit price of 10.
 # A limit price bounds the worst fill independently of the book. A minOut
 # derived from a quote would just track whatever the book offers right now.
 min_out=$(python3 -c "print(50 * 10**18 * 10 // 102)")
-echo "minOut = 50 USDC / 10.2 = $(fmt "$min_out" 18) INJ"
+echo "minOut = 50 USDC / 10.2 = $(fmt "$min_out" 18) INJ (fee-inclusive)"
+# The unspent remainder of a buy is in USDC, not INJ: one tick at the limit
+# price incl. the net fee bounds what a full fill can leave over.
+max_unspent=$(buy_max_unspent 10.2)
+echo "maxUnspent = 0.001 INJ * 10.2 * (1 + $NET_FEE) = $(fmt "$max_unspent" 6) USDC"
 receipt=$(evm_send "$DEMO" \
     "swapExactInputV2(address,string,uint256,uint256,uint256,address,uint256)" \
-    "$USDC" "$MARKET_ID" 50000000 "$min_out" 1000000 "$INJ" "$(deadline)")
+    "$USDC" "$MARKET_ID" 50000000 "$min_out" "$max_unspent" "$INJ" "$(deadline)")
 print_swap_events "$receipt"
+echo "  -> a full fill: amountIn - amountInSpent is below one tick's cost."
 echo "  -> balanceDebited can be 1 unit below amountInSpent: the sub-unit"
 echo "     remainder of the fee-inclusive cost stays as dust in the subaccount."
 contract_balances
@@ -353,7 +365,8 @@ print_swap_events "$receipt"
 echo "  recipient $recipient now holds $(fmt "$(cast balance "$recipient" --rpc-url "$ETH_URL")" 18) INJ"
 
 echo ""
-echo "maxAmountIn below the quote reverts instead of filling partially:"
+echo "maxAmountIn below the quote reverts instead of filling partially. The quote"
+echo "can carry one unit of headroom, so even the actual spend is too low:"
 if out=$(cast call "$DEMO" --from "$DEV1_EVM" \
     "swapExactOutputV1(address,string,uint256,uint256,address,uint256)" \
     "$INJ" "$MARKET_ID" 2000000000000000000 $(( need - 1 )) "$INJ" "$(deadline)" \
@@ -377,10 +390,12 @@ read -r q2_spent q2_out <<< "$q2"
 echo "quoteExactInputV2: amountInSpent=$(fmt "$q2_spent" 6) USDC of 500, amountOut=$(fmt "$q2_out" 18) INJ"
 
 echo ""
-echo "Strict swap (maxUnspent = 1 USDC) reverts and rolls the swap back:"
+max_unspent=$(buy_max_unspent 10.5)
+echo "Strict swap (maxUnspent = one tick at the deepest ask, 10.5 = $(fmt "$max_unspent" 6) USDC)"
+echo "reverts and rolls the swap back:"
 if out=$(cast call "$DEMO" --from "$DEV1_EVM" \
     "swapExactInputV2(address,string,uint256,uint256,uint256,address,uint256)" \
-    "$USDC" "$MARKET_ID" 500000000 0 1000000 "$INJ" "$(deadline)" \
+    "$USDC" "$MARKET_ID" 500000000 0 "$max_unspent" "$INJ" "$(deadline)" \
     --rpc-url "$ETH_URL" 2>&1); then
     fail "expected PartialFill, got $out"
 fi

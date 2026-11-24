@@ -33,11 +33,11 @@ full semantics.
 ## Requirements
 
 - `injectived` **v1.21.0 or later**. The V2 methods, `swapExactOutputV1` and
-  `erc20:` token resolution do not exist in v1.20.x. Until v1.21.0 is
-  released, build it from `master`:
+  `erc20:` token resolution do not exist in v1.20.x. Use a v1.21.0 release
+  binary or build the tag:
 
   ```
-  git clone https://github.com/InjectiveLabs/injective-core
+  git clone --branch v1.21.0 https://github.com/InjectiveLabs/injective-core
   cd injective-core && make install
   ```
 

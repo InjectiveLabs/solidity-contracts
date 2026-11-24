@@ -19,21 +19,35 @@ pragma solidity ^0.8.20;
 ///        ERC20 decimals.
 ///      - Swaps execute as atomic taker orders on the caller's default
 ///        subaccount and debit the caller's bank balance directly. No ERC20
-///        approval is needed. Calls carrying msg.value revert.
+///        approval is needed. Calls carrying msg.value revert, and the three
+///        swap methods revert inside a static call.
+///      - Swaps also match resting orders of the caller's own default
+///        subaccount and pay the taker fee on those fills.
 ///      - `recipient` receives the output; address(0) means the caller.
 ///      - `deadline` is a Unix timestamp in seconds; 0 disables it.
-///      - Quotes use the undiscounted taker fee and walk the aggregated book,
+///      - Fee: the market's taker fee × the exchange's
+///        `spot_atomic_market_order_fee_multiplier`. The caller is the fee
+///        recipient, so the relayer share comes back to it. With default
+///        params that is 0.1% × 2.5 = 0.25% gross and 0.15% net
+///        (40% relayer share). A fee-discount tier lowers it further.
+///      - Quotes use the undiscounted fee and walk the aggregated book,
 ///        including paused or frozen makers that live matching skips, so
-///        they can be slightly optimistic on fills and conservative on fees. `minOut` (or
-///        `maxAmountIn`) on execution is the binding guard.
+///        they can be slightly optimistic on fills and conservative on
+///        fees. `minOut` (or `maxAmountIn`) on execution is the binding
+///        guard. A `minOut` derived from a limit price is a fee-inclusive
+///        limit.
 ///      - Unspent input always stays with the caller.
 ///
 ///      Rounding, which applies to every execution method:
 ///
 ///      - Fills are floored to the market's quantity tick. Even a full fill can
 ///        leave less than one tick's worth of `amountIn` unspent, so
-///        `amountInSpent == amountIn` is not a full-fill check. Compare against
-///        quoteExactInputV2 instead.
+///        `amountInSpent == amountIn` is not a full-fill check. One tick's
+///        worth depends on the direction:
+///        - Sell (input is base): one quantity tick, in base units.
+///        - Buy (input is quote): one tick × the price of the first ask
+///          level the swap did not fully use × (1 + net fee), in quote
+///          units. Without that price, compare against quoteExactInputV2.
 ///      - The bank balance change can differ from the returned amounts by one
 ///        smallest unit, always in the caller's favour. A buy can debit one
 ///        unit less than `amountInSpent`; a sell can pay one unit on top of
@@ -60,7 +74,10 @@ interface ISwapModule {
     /// @notice Projects the input needed to receive at least `amountOut`.
     ///         Read-only.
     /// @dev Rounds the input up and reverts when the book cannot deliver
-    ///      `amountOut`. The input token is the market's other side.
+    ///      `amountOut`. The input token is the market's other side. The
+    ///      result can include one unit of headroom above what the swap
+    ///      actually spends; swapExactOutputV1 needs `maxAmountIn` of at
+    ///      least this quote.
     /// @param tokenOut Token to receive; address(0) for native INJ.
     /// @param marketId Spot market ID (0x-prefixed hex).
     /// @param amountOut Desired output in chain format.
@@ -93,8 +110,10 @@ interface ISwapModule {
 
     /// @notice Projects swapExactInputV2: the input the book would absorb and
     ///         the resulting output. Read-only.
-    /// @dev `amountIn - amountInSpent` above one quantity tick means the swap
-    ///      would only partially fill.
+    /// @dev `amountIn - amountInSpent` above one tick's worth of input means
+    ///      the swap would only partially fill. For a sell that is one
+    ///      quantity tick; for a buy it is in quote units (see the rounding
+    ///      notes above).
     /// @param tokenIn Token to sell; address(0) for native INJ.
     /// @param marketId Spot market ID (0x-prefixed hex).
     /// @param amountIn Input amount in chain format.
@@ -131,10 +150,12 @@ interface ISwapModule {
     /// @notice Delivers at least `amountOut` of `tokenOut` for at most
     ///         `maxAmountIn` of the market's other token.
     /// @dev Sizes the input with quoteExactOutputV1 and executes it with
-    ///      minOut = amountOut. Reverts when the required input exceeds
-    ///      `maxAmountIn` or the book cannot deliver `amountOut`; it never
-    ///      fills partially. Fills happen in quantity ticks, so
-    ///      `amountOutDelivered` can slightly exceed `amountOut`.
+    ///      minOut = amountOut. Reverts when that quote exceeds `maxAmountIn`
+    ///      or the book cannot deliver `amountOut`; it never fills partially.
+    ///      `amountOutDelivered` can exceed `amountOut`: fills happen in
+    ///      quantity ticks, and the input is sized at the undiscounted fee,
+    ///      so a caller with a fee-discount tier gets the discount back as
+    ///      extra output.
     /// @param tokenOut Token to receive; address(0) for native INJ.
     /// @param marketId Spot market ID (0x-prefixed hex).
     /// @param amountOut Minimum output in chain format.

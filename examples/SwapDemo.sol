@@ -106,9 +106,13 @@ contract SwapDemo {
     ///         `amountIn` is left unfilled.
     /// @dev Pass type(uint256).max to accept any partial fill. Do not pass 0
     ///      to demand a full fill: fills are floored to the market's quantity
-    ///      tick, so a full fill can still leave a sub-tick remainder. Size
-    ///      `maxUnspent` from the tick, or from quoteExactInputV2 off-chain.
-    ///      The revert also rolls back the swap.
+    ///      tick, so a full fill can still leave a sub-tick remainder.
+    ///      `maxUnspent` is in `tokenIn` units, so size it by direction:
+    ///      - sell (tokenIn is base): one quantity tick;
+    ///      - buy (tokenIn is quote): one tick × the highest ask price the
+    ///        swap may reach × (1 + net fee), e.g. at the limit price.
+    ///      Or take it from quoteExactInputV2 off-chain. The revert also
+    ///      rolls back the swap.
     function swapExactInputV2(
         address tokenIn,
         string calldata marketId,
