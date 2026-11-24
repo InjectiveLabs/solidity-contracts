@@ -22,6 +22,8 @@ interface IOracleModule {
         uint256 quoteCumulativePrice;
         uint64  baseTimestamp;
         uint64  quoteTimestamp;
+        uint64  baseSourceTimestamp;
+        uint64  quoteSourceTimestamp;
     }
 
     function oraclePrice(
@@ -68,6 +70,7 @@ uint256 rawPrice = oracle.oraclePrice(2, "BTC", "USD");
 | 11 | Provider   | `base` is the asset symbol; `quote` is the provider name |
 | 12 | Stork      | |
 | 13 | ChainlinkDataStreams | |
+| 14 | PythPro (Pyth Lazer) | Feed IDs are decimal uint32 strings |
 | 1  | Band       | **Deprecated** — always reverts |
 | 4  | Chainlink  | **Deprecated** — always reverts |
 | 10 | BandIBC    | **Deprecated** — always reverts |
@@ -87,6 +90,16 @@ quote = quote symbol, e.g. "USD"
 base  = 0x-prefixed 32-byte price-id (hex), e.g. "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43"
 quote = "USD"   (Pyth always quotes in USD)
 ```
+
+### PythPro (Pyth Lazer)
+
+```
+base  = decimal uint32 feed ID, e.g. "922"
+quote = decimal uint32 feed ID, e.g. "7", or "USD"
+```
+
+For example, `oraclePricePairState(14, "922", "7")` returns the cross price
+and timestamps for those two feeds.
 
 ### Provider
 
@@ -117,11 +130,28 @@ Returns the full `PricePairState` struct:
 | `quotePrice` | raw quote-leg spot price, 1e18 scaled; **0** when `quote == "USD"` |
 | `baseCumulativePrice` | cumulative base price for TWAP computation, 1e18 scaled |
 | `quoteCumulativePrice` | cumulative quote price for TWAP computation, 1e18 scaled; **0** when `quote == "USD"` |
-| `baseTimestamp` | Unix seconds of the most recent base-leg update |
-| `quoteTimestamp` | Unix seconds of the most recent quote-leg update; **== baseTimestamp** when `quote == "USD"` |
+| `baseTimestamp` | Injective acceptance time of the base-leg price, in Unix seconds |
+| `quoteTimestamp` | Injective acceptance time of the quote-leg price, in Unix seconds; **== baseTimestamp** when `quote == "USD"` |
+| `baseSourceTimestamp` | Base-leg source observation time, in Unix seconds; **0** when unavailable |
+| `quoteSourceTimestamp` | Quote-leg source observation time, in Unix seconds; **0** when unavailable; **== baseSourceTimestamp** when `quote == "USD"` |
 
 Use this method when you need the update timestamp (e.g. for a Chainlink
 `latestRoundData()` `updatedAt` field) or individual leg prices.
+
+Source timestamps expose the oracle module's stored source-time metadata.
+Check both legs when evaluating the age of a cross price, and treat zero as
+unavailable rather than substituting the acceptance timestamp. PythPro's
+microsecond timestamps are normalized to whole Unix seconds. Its existing
+batch-header fallback still applies to the stored timestamp when a per-feed
+`feedUpdateTimestamp` was absent; this response does not identify that fallback.
+
+The source timestamps are appended after the original seven fields. Both
+pair-state methods require a matching node implementation that returns the
+extended response. Deploy consumers compiled with this interface after that
+chain upgrade: they cannot decode the older, shorter response. Existing Solidity
+callers using the seven-field interface can decode the original prefix of the
+extended response; callers that enforce an exact response length must be checked
+separately. Function names and inputs, and the price-only response, are unchanged.
 
 ### `oraclePricePairStateScaled`
 
@@ -148,6 +178,7 @@ When `quote == "USD"`, the on-chain oracle module uses a single-leg price state
 
 - `quotePrice` and `quoteCumulativePrice` are **0**
 - `quoteTimestamp` is set to **`baseTimestamp`**
+- `quoteSourceTimestamp` is set to **`baseSourceTimestamp`**, including when it is zero
 
 Callers building a `latestRoundData()` implementation should use
 `min(baseTimestamp, quoteTimestamp)` as `updatedAt`, which collapses to

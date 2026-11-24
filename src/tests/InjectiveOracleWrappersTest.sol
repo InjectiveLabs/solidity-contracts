@@ -85,7 +85,9 @@ contract InjectiveOracleWrappersTest is Test {
                 baseCumulativePrice: 0,
                 quoteCumulativePrice: 0,
                 baseTimestamp: 1_717_171_717,
-                quoteTimestamp: 1_717_171_717
+                quoteTimestamp: 1_717_171_717,
+                baseSourceTimestamp: 0,
+                quoteSourceTimestamp: 0
             })
         );
 
@@ -114,7 +116,9 @@ contract InjectiveOracleWrappersTest is Test {
                 baseCumulativePrice: 0,
                 quoteCumulativePrice: 0,
                 baseTimestamp: 1_717_171_717,
-                quoteTimestamp: 1_717_171_717
+                quoteTimestamp: 1_717_171_717,
+                baseSourceTimestamp: 0,
+                quoteSourceTimestamp: 0
             })
         );
 
@@ -176,7 +180,9 @@ contract InjectiveOracleWrappersTest is Test {
                 baseCumulativePrice: 0,
                 quoteCumulativePrice: 0,
                 baseTimestamp: 1_818,
-                quoteTimestamp: 1_818
+                quoteTimestamp: 1_818,
+                baseSourceTimestamp: 0,
+                quoteSourceTimestamp: 0
             })
         );
 
@@ -201,7 +207,9 @@ contract InjectiveOracleWrappersTest is Test {
                 baseCumulativePrice: 0,
                 quoteCumulativePrice: 0,
                 baseTimestamp: 1_234_567_890,
-                quoteTimestamp: 1_234_567_890
+                quoteTimestamp: 1_234_567_890,
+                baseSourceTimestamp: 0,
+                quoteSourceTimestamp: 0
             })
         );
 
@@ -236,7 +244,9 @@ contract InjectiveOracleWrappersTest is Test {
                 baseCumulativePrice: 0,
                 quoteCumulativePrice: 0,
                 baseTimestamp: 100,
-                quoteTimestamp: 100
+                quoteTimestamp: 100,
+                baseSourceTimestamp: 0,
+                quoteSourceTimestamp: 0
             })
         );
 
@@ -251,7 +261,9 @@ contract InjectiveOracleWrappersTest is Test {
                 baseCumulativePrice: 0,
                 quoteCumulativePrice: 0,
                 baseTimestamp: 100,
-                quoteTimestamp: 100
+                quoteTimestamp: 100,
+                baseSourceTimestamp: 0,
+                quoteSourceTimestamp: 0
             })
         );
 

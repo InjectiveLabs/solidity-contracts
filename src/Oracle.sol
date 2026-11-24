@@ -16,6 +16,7 @@ interface IOracleModule {
     ///        - quotePrice            == 0
     ///        - quoteCumulativePrice  == 0
     ///        - quoteTimestamp        == baseTimestamp
+    ///        - quoteSourceTimestamp  == baseSourceTimestamp
     ///
     ///      This matches the on-chain PricePairStateForUSD semantics.
     struct PricePairState {
@@ -30,11 +31,16 @@ interface IOracleModule {
         /// @notice Cumulative quote price used for TWAP computation, 1e18 scaled.
         ///         Zero when quote == "USD".
         uint256 quoteCumulativePrice;
-        /// @notice Unix seconds of the most recent base-leg price update.
+        /// @notice Injective acceptance time of the base-leg price, in Unix seconds.
         uint64 baseTimestamp;
-        /// @notice Unix seconds of the most recent quote-leg price update.
+        /// @notice Injective acceptance time of the quote-leg price, in Unix seconds.
         ///         Equal to baseTimestamp when quote == "USD".
         uint64 quoteTimestamp;
+        /// @notice Base-leg source observation time in Unix seconds; zero when unavailable.
+        uint64 baseSourceTimestamp;
+        /// @notice Quote-leg source observation time in Unix seconds; zero when unavailable.
+        ///         Equal to baseSourceTimestamp when quote == "USD".
+        uint64 quoteSourceTimestamp;
     }
 
     /// @notice Returns the reference price for a (oracleType, base, quote) triple.
@@ -50,6 +56,7 @@ interface IOracleModule {
     ///   11 = Provider
     ///   12 = Stork
     ///   13 = ChainlinkDataStreams
+    ///   14 = PythPro (Pyth Lazer)
     ///
     /// Deprecated / unsupported types (1=Band, 4=Chainlink, 10=BandIBC) will
     /// cause a revert with an OraclePriceNotFound error.
@@ -61,6 +68,9 @@ interface IOracleModule {
     ///   Pyth:
     ///     base  = 0x-prefixed 32-byte price-id hex string
     ///     quote = "USD" (Pyth always quotes in USD)
+    ///   PythPro:
+    ///     base  = decimal uint32 feed ID (e.g. "922")
+    ///     quote = decimal uint32 feed ID (e.g. "7") or "USD"
     ///   Provider:
     ///     base  = asset symbol (or compound key from JoinProviderCompoundKey)
     ///     quote = provider name (e.g. "prov1")
@@ -78,8 +88,9 @@ interface IOracleModule {
     /// @notice Returns the full price-pair state for a (oracleType, base, quote) triple.
     ///
     /// @dev The returned struct includes pair price, individual leg prices, cumulative
-    ///      prices for TWAP computation, and per-leg timestamps.  All price values are
-    ///      1e18-scaled unsigned integers.
+    ///      prices for TWAP computation, and per-leg acceptance and source timestamps.
+    ///      All price values are 1e18-scaled unsigned integers. Source timestamps are
+    ///      in Unix seconds; zero means unavailable.
     ///
     ///      Recommended for Chainlink AggregatorV3Interface and Pyth PythAggregatorV3
     ///      wrapper contracts, where latestRoundData() requires both the price and a
@@ -88,7 +99,8 @@ interface IOracleModule {
     ///      Oracle type conventions are the same as oraclePrice().
     ///
     ///      When quote == "USD" the quotePrice, quoteCumulativePrice are returned as 0
-    ///      and quoteTimestamp equals baseTimestamp (single-leg path, no quote-side data).
+    ///      and both quote timestamps equal their corresponding base timestamps
+    ///      (single-leg path, no quote-side data).
     ///
     /// @param oracleType Numeric oracle-type enum value.
     /// @param base       Base asset identifier.
