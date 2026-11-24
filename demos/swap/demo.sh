@@ -6,20 +6,32 @@
 # spot market -> swap allowlist -> orderbook liquidity -> SwapDemo contract ->
 # every precompile method, including partial fills and their detection.
 #
-# Requirements: injectived v1.21.0+, forge + cast, jq, python3.
+# Requirements: injectived v1.21.0+ (a local binary, or Docker with the
+# injectivelabs/injective-core image), forge + cast, jq, python3.
 # Run from anywhere: ./demos/swap/demo.sh
 
-set -euo pipefail
+set -eEuo pipefail
+# Some steps hide their output; name the command that failed instead of
+# exiting silently.
+trap 'printf "\033[31mERROR: line %s failed: %s\033[0m\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+INVOKE_DIR="$PWD"
 cd "$REPO_ROOT"
 
 INJECTIVED="${INJECTIVED:-injectived}"
-HOME_DIR="${SWAP_DEMO_HOME:-$REPO_ROOT/.injectived-swap-demo}"
+# Set INJECTIVED_IMAGE to run the node and every injectived command in Docker.
+# Without a local injectived, the demo falls back to Docker on its own.
+INJECTIVED_IMAGE="${INJECTIVED_IMAGE:-}"
+DEFAULT_IMAGE="injectivelabs/injective-core:v1.21.0"
+DEFAULT_HOME_DIR="$REPO_ROOT/.injectived-swap-demo"
+HOME_DIR="${SWAP_DEMO_HOME:-$DEFAULT_HOME_DIR}"
 KEEP_NODE="${KEEP_NODE:-0}"
+CONTAINER="swap-demo-injectived"
+NODE_CONTAINER_ID="" # set only once this run has created the node container
+NODE_PID=""
 
 CHAIN_ID="injective-1"
-KR=(--keyring-backend test --home "$HOME_DIR")
 TXF=(--chain-id "$CHAIN_ID" --gas-prices 160000000inj --yes --broadcast-mode sync --output json)
 RPC_PORT=26657
 EVM_PORT=8545
@@ -36,12 +48,55 @@ NET_FEE="0.0015" # taker 0.1% x atomic multiplier 2.5, minus the 40% relayer sha
 
 log() { printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
 fail() { printf '\033[31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
+
+# The chain home must be absolute (Docker mounts it at the same path). A
+# relative SWAP_DEMO_HOME is taken relative to where the demo was started.
+case "$HOME_DIR" in
+    /*) ;;
+    *) HOME_DIR="$INVOKE_DIR/$HOME_DIR" ;;
+esac
+HOME_DIR="${HOME_DIR%/}"
+case "$(basename "$HOME_DIR")" in
+    "" | . | ..) fail "SWAP_DEMO_HOME must name a directory, got: $HOME_DIR" ;;
+esac
+mkdir -p "$(dirname "$HOME_DIR")"
+HOME_DIR="$(cd "$(dirname "$HOME_DIR")" && pwd)/$(basename "$HOME_DIR")"
+KR=(--keyring-backend test --home "$HOME_DIR")
 # Formats a chain-format amount with the given decimals.
 fmt() { python3 -c "from decimal import Decimal as D; print(f'{D(int(\"$1\"))/D(10**$2):f}')"; }
 
-for bin in "$INJECTIVED" forge cast jq python3 curl; do
+if [ -z "$INJECTIVED_IMAGE" ] && ! command -v "$INJECTIVED" > /dev/null && command -v docker > /dev/null; then
+    INJECTIVED_IMAGE="$DEFAULT_IMAGE"
+    echo "$INJECTIVED not found; using Docker image $INJECTIVED_IMAGE"
+fi
+if [ -n "$INJECTIVED_IMAGE" ]; then
+    node_bin=docker
+    # Inside the container the node listens on all interfaces; Docker
+    # publishes the ports on the host's loopback only.
+    LISTEN_HOST="0.0.0.0"
+else
+    node_bin="$INJECTIVED"
+    LISTEN_HOST="127.0.0.1"
+fi
+for bin in "$node_bin" forge cast jq python3 curl; do
     command -v "$bin" > /dev/null || fail "$bin not found"
 done
+
+# Runs injectived, locally or in Docker. The chain home is mounted at the same
+# path inside the container, so paths work unchanged, and files are created as
+# the current user so the next run can wipe them.
+DOCKER_USER=(--user "$(id -u):$(id -g)" -e HOME=/tmp)
+inj() {
+    if [ -z "$INJECTIVED_IMAGE" ]; then
+        "$INJECTIVED" "$@"
+    elif [ -n "$NODE_CONTAINER_ID" ]; then
+        # This run's node. Shares its network, so 127.0.0.1:$RPC_PORT reaches it.
+        docker exec -i "${DOCKER_USER[@]}" "$NODE_CONTAINER_ID" injectived "$@"
+    else
+        docker run --rm -i "${DOCKER_USER[@]}" -v "$HOME_DIR:$HOME_DIR" \
+            --entrypoint injectived "$INJECTIVED_IMAGE" "$@"
+    fi
+}
 
 ################################################################################
 # helpers
@@ -56,7 +111,7 @@ cosmos_tx() {
     [ "$code" = "0" ] || fail "$desc: CheckTx code $code: $(echo "$out" | jq -r '.raw_log')"
     hash=$(echo "$out" | jq -r '.txhash')
     for _ in $(seq 1 20); do
-        if out=$("$INJECTIVED" q tx "$hash" --node "$NODE" --chain-id "$CHAIN_ID" --output json 2>/dev/null); then
+        if out=$(inj q tx "$hash" --node "$NODE" --chain-id "$CHAIN_ID" --output json 2>/dev/null); then
             code=$(echo "$out" | jq -r '.code')
             [ "$code" = "0" ] || fail "$desc: DeliverTx code $code: $(echo "$out" | jq -r '.raw_log')"
             echo "ok: $desc"
@@ -129,9 +184,20 @@ num() { awk '{print $1}'; }
 
 deadline() { echo $(( $(date +%s) + 300 )); }
 
+# Stops only a node this run started, never one left by an earlier run.
 cleanup() {
-    if [ -n "${NODE_PID:-}" ] && [ "$KEEP_NODE" != "1" ]; then
+    [ "$KEEP_NODE" = "1" ] && return
+    if [ -n "$NODE_CONTAINER_ID" ]; then
+        docker rm -f "$NODE_CONTAINER_ID" > /dev/null 2>&1 || true
+    elif [ -n "$NODE_PID" ]; then
         kill "$NODE_PID" 2> /dev/null || true
+    fi
+}
+node_alive() {
+    if [ -n "$INJECTIVED_IMAGE" ]; then
+        [ "$(docker inspect -f '{{.State.Running}}' "$NODE_CONTAINER_ID" 2> /dev/null)" = "true" ]
+    else
+        kill -0 "$NODE_PID" 2> /dev/null
     fi
 }
 trap cleanup EXIT
@@ -144,19 +210,33 @@ echo "ok"
 log "1) Fresh chain in $HOME_DIR"
 ################################################################################
 
+# A container by this name is a node an earlier run kept (KEEP_NODE=1); leave
+# it to the user rather than removing it.
+if [ -n "$INJECTIVED_IMAGE" ] && docker inspect "$CONTAINER" > /dev/null 2>&1; then
+    fail "container $CONTAINER exists from an earlier run (KEEP_NODE=1?); remove it with: docker rm -f $CONTAINER"
+fi
 for port in $RPC_PORT $EVM_PORT $GRPC_PORT $API_PORT; do
     if lsof -nP -iTCP:"$port" -sTCP:LISTEN > /dev/null 2>&1; then
         fail "port $port is in use; stop the process using it first"
     fi
 done
 
+if [ -n "$INJECTIVED_IMAGE" ]; then
+    docker image inspect "$INJECTIVED_IMAGE" > /dev/null 2>&1 || docker pull "$INJECTIVED_IMAGE"
+fi
+# Each run wipes the chain home, so only ever wipe one this demo created.
+if [ -e "$HOME_DIR" ] && [ ! -f "$HOME_DIR/.swap-demo" ] && [ "$HOME_DIR" != "$DEFAULT_HOME_DIR" ]; then
+    fail "$HOME_DIR exists and was not created by this demo; remove it or set SWAP_DEMO_HOME"
+fi
 rm -rf "$HOME_DIR"
-"$INJECTIVED" init swap-demo --chain-id "$CHAIN_ID" --home "$HOME_DIR" > /dev/null 2>&1
+mkdir -p "$HOME_DIR"
+touch "$HOME_DIR/.swap-demo"
+inj init swap-demo --chain-id "$CHAIN_ID" --home "$HOME_DIR" > /dev/null 2>&1
 for key in val dev1 dev2; do
-    "$INJECTIVED" keys add "$key" "${KR[@]}" > /dev/null 2>&1
+    inj keys add "$key" "${KR[@]}" > /dev/null 2>&1
 done
-DEV1=$("$INJECTIVED" keys show dev1 -a "${KR[@]}")
-DEV2=$("$INJECTIVED" keys show dev2 -a "${KR[@]}")
+DEV1=$(inj keys show dev1 -a "${KR[@]}")
+DEV2=$(inj keys show dev2 -a "${KR[@]}")
 echo "dev1 (exchange admin, contract owner): $DEV1"
 echo "dev2 (market maker):                   $DEV2"
 
@@ -181,37 +261,50 @@ perl -i -pe 's/^timeout_commit = ".*?"/timeout_commit = "1000ms"/' "$HOME_DIR/co
 perl -i -pe 's/^minimum-gas-prices = ".*?"/minimum-gas-prices = "1inj"/' "$HOME_DIR/config/app.toml"
 
 for key in val dev1 dev2; do
-    "$INJECTIVED" genesis add-genesis-account "$("$INJECTIVED" keys show $key -a "${KR[@]}")" \
+    inj genesis add-genesis-account "$(inj keys show $key -a "${KR[@]}")" \
         1000000000000000000000000inj --chain-id "$CHAIN_ID" --home "$HOME_DIR" > /dev/null
 done
-"$INJECTIVED" genesis gentx val 1000000000000000000000inj --chain-id "$CHAIN_ID" "${KR[@]}" > /dev/null 2>&1
-"$INJECTIVED" genesis collect-gentxs --home "$HOME_DIR" > /dev/null 2>&1
+inj genesis gentx val 1000000000000000000000inj --chain-id "$CHAIN_ID" "${KR[@]}" > /dev/null 2>&1
+inj genesis collect-gentxs --home "$HOME_DIR" > /dev/null 2>&1
 
 ################################################################################
 log "2) Start the node"
 ################################################################################
 
-"$INJECTIVED" start --home "$HOME_DIR" \
-    --rpc.laddr "tcp://127.0.0.1:$RPC_PORT" \
-    --grpc.address "127.0.0.1:$GRPC_PORT" \
-    --api.enable=true --api.address "tcp://127.0.0.1:$API_PORT" \
-    --json-rpc.enable=true \
-    --json-rpc.address "127.0.0.1:$EVM_PORT" \
-    --json-rpc.api "eth,net,web3,debug" \
-    --log-level warn > "$HOME_DIR/node.log" 2>&1 &
-NODE_PID=$!
+start_args=(start --home "$HOME_DIR"
+    --rpc.laddr "tcp://$LISTEN_HOST:$RPC_PORT"
+    --grpc.address "$LISTEN_HOST:$GRPC_PORT"
+    --api.enable=true --api.address "tcp://$LISTEN_HOST:$API_PORT"
+    --json-rpc.enable=true
+    --json-rpc.address "$LISTEN_HOST:$EVM_PORT"
+    --json-rpc.api "eth,net,web3,debug"
+    --log-level warn)
+if [ -n "$INJECTIVED_IMAGE" ]; then
+    ports=()
+    for port in $RPC_PORT $EVM_PORT $GRPC_PORT $API_PORT; do
+        ports+=(-p "127.0.0.1:$port:$port")
+    done
+    NODE_CONTAINER_ID=$(docker run -d --name "$CONTAINER" "${DOCKER_USER[@]}" -v "$HOME_DIR:$HOME_DIR" "${ports[@]}" \
+        --entrypoint sh "$INJECTIVED_IMAGE" -c 'exec injectived "$@" > "$0" 2>&1' \
+        "$HOME_DIR/node.log" "${start_args[@]}")
+    NODE_DESC="container $CONTAINER ($INJECTIVED_IMAGE)"
+else
+    "$INJECTIVED" "${start_args[@]}" > "$HOME_DIR/node.log" 2>&1 &
+    NODE_PID=$!
+    NODE_DESC="pid $NODE_PID"
+fi
 
 for _ in $(seq 1 60); do
     if cast block-number --rpc-url "$ETH_URL" > /dev/null 2>&1; then
         height=$(cast block-number --rpc-url "$ETH_URL")
         [ "$height" -ge 2 ] && break
     fi
-    kill -0 "$NODE_PID" 2> /dev/null || fail "node exited, see $HOME_DIR/node.log"
+    node_alive || fail "node exited, see $HOME_DIR/node.log"
     sleep 1
 done
-echo "node pid $NODE_PID at height $(cast block-number --rpc-url "$ETH_URL"), log: $HOME_DIR/node.log"
+echo "node $NODE_DESC at height $(cast block-number --rpc-url "$ETH_URL"), log: $HOME_DIR/node.log"
 
-export_key() { echo y | "$INJECTIVED" keys unsafe-export-eth-key "$1" "${KR[@]}" 2> /dev/null | tail -1; }
+export_key() { echo y | inj keys unsafe-export-eth-key "$1" "${KR[@]}" 2> /dev/null | tail -1; }
 DEV1_PK="0x$(export_key dev1)"
 DEV2_PK="0x$(export_key dev2)"
 DEV1_EVM=$(cast wallet address --private-key "$DEV1_PK")
@@ -237,11 +330,11 @@ log "4) Launch INJ/USDC and allowlist it for swaps"
 ################################################################################
 
 cosmos_tx "instant-spot-market-launch INJ/USDC" \
-    "$INJECTIVED" tx exchange instant-spot-market-launch INJ/USDC inj "$USDC_DENOM" \
+    inj tx exchange instant-spot-market-launch INJ/USDC inj "$USDC_DENOM" \
     --min-price-tick-size=0.001 --min-quantity-tick-size=0.001 --min-notional=1 \
     --base-decimals=18 --quote-decimals=6 \
     --from dev1 --gas 3000000 --node "$NODE" "${KR[@]}" "${TXF[@]}"
-MARKET_ID=$("$INJECTIVED" q exchange spot-markets --node "$NODE" --chain-id "$CHAIN_ID" --output json |
+MARKET_ID=$(inj q exchange spot-markets --node "$NODE" --chain-id "$CHAIN_ID" --output json |
     jq -r '.markets[] | (.market // .) | select(.ticker == "INJ/USDC") | .market_id')
 echo "market id: $MARKET_ID"
 
@@ -260,10 +353,10 @@ cat > "$HOME_DIR/swap-params.json" << EOF
   "signatures": []
 }
 EOF
-"$INJECTIVED" tx sign "$HOME_DIR/swap-params.json" --from dev1 --chain-id "$CHAIN_ID" \
+inj tx sign "$HOME_DIR/swap-params.json" --from dev1 --chain-id "$CHAIN_ID" \
     --node "$NODE" "${KR[@]}" --output-document "$HOME_DIR/swap-params.signed.json" 2> /dev/null
 cosmos_tx "MsgUpdateSwapParams" \
-    "$INJECTIVED" tx broadcast "$HOME_DIR/swap-params.signed.json" --node "$NODE" --chain-id "$CHAIN_ID" \
+    inj tx broadcast "$HOME_DIR/swap-params.signed.json" --node "$NODE" --chain-id "$CHAIN_ID" \
     --broadcast-mode sync --output json "${KR[@]}"
 echo "swap_params: $(curl -s "http://127.0.0.1:$API_PORT/injective/exchange/v2/exchangeParams" | jq -c '.params.swap_params')"
 
@@ -273,7 +366,7 @@ log "5) dev2 makes a market: asks 10 INJ @ 10.0 and 10.5, bids 10 INJ @ 9.5 and 
 
 order() {
     cosmos_tx "$1 $2 INJ @ $3" \
-        "$INJECTIVED" tx exchange create-spot-limit-order "$1" INJ/USDC "$2" "$3" "$4" \
+        inj tx exchange create-spot-limit-order "$1" INJ/USDC "$2" "$3" "$4" \
         --from dev2 --gas 600000 --node "$NODE" "${KR[@]}" "${TXF[@]}"
 }
 order sell 10 10.0 ask-1
@@ -357,7 +450,8 @@ need=$(cast call "$SWAP" "quoteExactOutputV1(address,string,uint256)(uint256)" \
     "$INJ" "$MARKET_ID" 2000000000000000000 --rpc-url "$ETH_URL" | num)
 max_in=$(( need * 101 / 100 ))
 echo "quoteExactOutputV1: amountIn=$need ($(fmt "$need" 6) USDC); maxAmountIn=+1% = $(fmt "$max_in" 6) USDC"
-recipient=$(cast wallet new --json | jq -r '.[0].address')
+# A random key's address; `cast wallet new --json` changed shape across Foundry versions.
+recipient=$(cast wallet address --private-key "0x$(python3 -c 'import secrets; print(secrets.token_hex(32))')")
 receipt=$(evm_send "$DEMO" \
     "swapExactOutputV1(address,string,uint256,uint256,address,uint256)" \
     "$INJ" "$MARKET_ID" 2000000000000000000 "$max_in" "$recipient" "$(deadline)")
@@ -424,6 +518,6 @@ contract_balances
 
 log "Done"
 if [ "$KEEP_NODE" = "1" ]; then
-    echo "Node left running (pid $NODE_PID). Market $MARKET_ID, USDC $USDC, SwapDemo $DEMO."
+    echo "Node left running ($NODE_DESC). Market $MARKET_ID, USDC $USDC, SwapDemo $DEMO."
     trap - EXIT
 fi

@@ -43,35 +43,31 @@ basically curl for gRPC servers.
 brew install grpcurl
 ```
 
-### Injectived
+### Local chain
 
-Build from source and run a local `injectived` node.
+The demo runs against a local Injective chain (v1.21.0 or later) from the
+public `injectivelabs/injective-core` Docker image. From the repo root:
 
-Clone `injectived`:
-
-```bash
-git clone https://github.com/InjectiveFoundation/injective-core
+```
+docker pull injectivelabs/injective-core:v1.21.0
+./demos/localnet/start.sh
+export PATH="$(pwd)/demos/localnet/bin:$PATH"
 ```
 
-Setup the genesis file:
-```bash
-cd injective-core
-./setup.sh
-```
-
-Build and run `injectived`:
-```bash
-make install
-INJHOME="$(pwd)/.injectived" ./injectived.sh
-```
+`start.sh` creates the `user1` key and funds it. The `PATH` line
+makes the demo's `injectived` commands run inside the node's container. See
+[`demos/localnet`](../localnet/README.md) for details, keeping the chain
+somewhere other than the default (`INJHOME`), using your own `injectived`
+binary instead, and stopping the chain.
 
 ## Run the demo
 
-Warning! Make sure to set the same `$INJHOME` env for bash session where you run demo script. Script is using local keys from that dir.
+The script uses the keys in the localnet's chain home: `$INJHOME`, or
+`.injectived` in the repo root by default (see
+[`demos/localnet`](../localnet/README.md#chain-home-injhome)).
 
 ```bash
-export INJHOME="<some path there>"
-
+cd demos/permissions-hook
 ./demo.sh
 ```
 

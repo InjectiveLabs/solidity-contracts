@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+# Run from the demo directory: .local.env and the relative paths below assume it.
+cd "$(dirname "$0")" || exit 1
 
 ################################################################################
 
@@ -10,8 +13,7 @@ else
     exit 1
 fi
 
-: ${INJ_HOME:=~/.injectived}
-echo "User injectived home: $INJ_HOME"
+echo "Chain home (INJHOME): $INJHOME"
 
 ################################################################################
 
@@ -43,7 +45,12 @@ else
         --unsafe-password "$USER_PWD" \
         --mnemonic "$USER_MNEMONIC"
 fi
-user_inj_address=$(yes $USER_PWD | injectived --home $INJ_HOME keys show -a $USER)
+user_inj_address=$(yes $USER_PWD | injectived --home "$INJHOME" keys show -a $USER)
+if [ -z "$user_inj_address" ]; then
+    echo "Error: key $USER not found in the chain home $INJHOME."
+    echo "Start the chain with demos/localnet/start.sh, and export the same INJHOME for both."
+    exit 1
+fi
 user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
 echo "User INJ address: $user_inj_address"
 echo "User ETH address: $user_eth_address"

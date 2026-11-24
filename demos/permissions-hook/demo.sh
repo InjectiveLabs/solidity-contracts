@@ -1,8 +1,12 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+# Run from the demo directory: .local.env and the relative paths below assume it.
+cd "$(dirname "$0")" || exit 1
 
 ################################################################################
 
 source ./.local.env
+echo "Chain home (INJHOME): $INJHOME"
 
 ################################################################################
 
@@ -61,7 +65,12 @@ else
         --unsafe-password "$USER_PWD" \
         --mnemonic "$USER_MNEMONIC"
 fi
-user_inj_address=$(yes $USER_PWD | injectived --home $INJHOME keys show -a $USER)
+user_inj_address=$(yes $USER_PWD | injectived --home "$INJHOME" keys show -a $USER)
+if [ -z "$user_inj_address" ]; then
+    echo "Error: key $USER not found in the chain home $INJHOME."
+    echo "Start the chain with demos/localnet/start.sh, and export the same INJHOME for both."
+    exit 1
+fi
 user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
 echo "User INJ address: $user_inj_address"
 echo "User ETH address: $user_eth_address"
@@ -125,12 +134,12 @@ sed -e "s/\[DENOM\]/$denom/g" \
 # Create the namespace using the filled template
 echo "4) Creating namespace from unauthorized user (SHOULD FAIL)..."
 create_namespace_res=$(echo 12345678 | injectived tx permissions create-namespace \
-    --home $INJHOME \
+    --home "$INJHOME" \
     --from user2 \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
-    --gas 300000 \
-    --fees 500000inj \
+    --gas 1000000 \
+    --fees 1000000inj \
     --broadcast-mode sync \
     --yes \
     --output json \
@@ -145,12 +154,12 @@ echo ""
 
 echo "4 bis) Creating namespace from owner of ERC20 token (SHOULD SUCCEED)..."
 create_namespace_res=$(echo 12345678 | injectived tx permissions create-namespace \
-    --home $INJHOME \
+    --home "$INJHOME" \
     --from $USER \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
-    --gas 300000 \
-    --fees 500000inj \
+    --gas 1000000 \
+    --fees 1000000inj \
     --broadcast-mode sync \
     --yes \
     --output json \

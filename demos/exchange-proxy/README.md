@@ -56,30 +56,32 @@ basically curl for gRPC servers.
 brew install grpcurl
 ```
 
-### Injectived
-
-Build from source and run a local `injectived` node.
-
-Clone `injectived`: 
+or, on Linux (with Go):
 
 ```
-git clone -b v1.16.0 https://github.com/InjectiveFoundation/injective-core 
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl@v1.9.3
 ```
 
-Setup the genesis file:
+### Local chain
+
+The demo runs against a local Injective chain (v1.21.0 or later) from the
+public `injectivelabs/injective-core` Docker image. From the repo root:
+
 ```
-cd injective-core
-./setup.sh
+docker pull injectivelabs/injective-core:v1.21.0
+./demos/localnet/start.sh
+export PATH="$(pwd)/demos/localnet/bin:$PATH"
 ```
 
-Build and run `injectived`:
-```
-make install
-INJHOME="$(pwd)/.injectived" ./injectived.sh
-```
+`start.sh` creates the `user1` key and funds it, and launches the INJ/USDT PERP market the demo trades on.
+The `PATH` line makes the demo's `injectived` commands run inside the node's container. See
+[`demos/localnet`](../localnet/README.md) for details, keeping the chain
+somewhere other than the default (`INJHOME`), using your own `injectived`
+binary instead, and stopping the chain.
 
 ## Run the demo
 
 ```
+cd demos/exchange-proxy
 ./demo.sh
 ```

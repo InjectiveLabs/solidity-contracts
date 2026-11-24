@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+# Run from the demo directory: .local.env and the relative paths below assume it.
+cd "$(dirname "$0")" || exit 1
 
 # Load environment variables
 if [ -f ./.local.env ]; then
@@ -8,8 +11,7 @@ else
     exit 1
 fi
 
-: ${INJ_HOME:=~/.injectived}
-echo "User injectived home: $INJ_HOME"
+echo "Chain home (INJHOME): $INJHOME"
 
 ################################################################################
 
@@ -70,7 +72,12 @@ else
         --mnemonic "$USER_MNEMONIC"
 fi
 echo ""
-user_inj_address=$(yes $USER_PWD | injectived --home $INJ_HOME keys show -a $USER)
+user_inj_address=$(yes $USER_PWD | injectived --home "$INJHOME" keys show -a $USER)
+if [ -z "$user_inj_address" ]; then
+    echo "Error: key $USER not found in the chain home $INJHOME."
+    echo "Start the chain with demos/localnet/start.sh, and export the same INJHOME for both."
+    exit 1
+fi
 user_eth_address=$(injectived q exchange eth-address-from-inj-address $user_inj_address)
 user_subaccount_id="$user_eth_address"000000000000000000000001
 echo "User INJ address: $user_inj_address"
@@ -82,7 +89,7 @@ echo "2) Depositing funds to user subaccount..."
 # deposit 1000 USDT into the user's subaccount
 deposit_res=$(yes 12345678 | injectived tx exchange deposit 1000000000$QUOTE $user_subaccount_id \
     --chain-id $CHAIN_ID \
-    --home $INJ_HOME \
+    --home "$INJHOME" \
     --from $USER \
     --fees 500000inj \
     --output json \
@@ -154,7 +161,7 @@ echo "5) calling proxy createDerivativeLimitOrder..."
 # Note that the margin, which is roughly the amount that would be taken from the
 # user's deposit if this transaction goes through (aka the "hold"), is covered by
 # the 300 USDT grant created above
-market_id="0x7cc8b10d7deb61e744ef83bdec2bbcf4a056867e89b062c6a453020ca82bd4e4" # INJ/USDT
+market_id="$MARKET_ID" # INJ/USDT PERP
 user_subaccount_id="$user_eth_address"000000000000000000000001
 quantity=125750000000000000000
 price=1450000000000000000

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# Runs injectived inside the localnet container started by demos/localnet/start.sh,
+# so demos that call `injectived` work without a local binary:
+#
+#   export PATH="$(pwd)/demos/localnet/bin:$PATH"
+#
+# The container shares the node's network (localhost:26657 reaches it) and
+# mounts the repo at the same path, so --home and file arguments under the
+# repo work unchanged.
+
+set -euo pipefail
+
+CONTAINER="${LOCALNET_CONTAINER:-injective-localnet}"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+
+if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2> /dev/null)" != "true" ]; then
+    echo "injectived: container $CONTAINER is not running; start it with demos/localnet/start.sh" >&2
+    exit 1
+fi
+
+# Commands that name a chain home must name the localnet's: any other path
+# either does not exist in the container or holds other keys.
+LOCALNET_HOME="$(docker inspect -f '{{ index .Config.Labels "injective-localnet.home" }}' "$CONTAINER")"
+prev=""
+for arg in "$@"; do
+    home=""
+    case "$arg" in
+        --home=*) home="${arg#--home=}" ;;
+        *) [ "$prev" = "--home" ] && home="$arg" ;;
+    esac
+    if [ -n "$home" ] && [ -n "$LOCALNET_HOME" ] && [ "${home%/}" != "$LOCALNET_HOME" ]; then
+        echo "injectived: --home $home is not the localnet's chain home $LOCALNET_HOME" >&2
+        echo "injectived: export INJHOME=\"$LOCALNET_HOME\" before running the demo" >&2
+        exit 1
+    fi
+    prev="$arg"
+done
+
+workdir=()
+case "$PWD/" in
+    "$REPO_ROOT"/*) workdir=(-w "$PWD") ;;
+esac
+
+exec docker exec -i --user "$(id -u):$(id -g)" -e HOME=/tmp ${workdir[@]+"${workdir[@]}"} "$CONTAINER" injectived "$@"

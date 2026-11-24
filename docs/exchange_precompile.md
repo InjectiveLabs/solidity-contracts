@@ -146,7 +146,7 @@ limit order on behalf of another account.
 Before the contract can place the order on behalf of the trader, the trader must
 first authorize the contract to do so by calling the `approve` method.
 
-Please refer to the [authz demo](..demos/exchange-proxy/demo.sh) to see how to
+Please refer to the [authz demo](../demos/exchange-proxy/README.md) to see how to
 call the `approve` method of the precompile.
 
 ```
