@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Load environment variables
 if [ -f ./.local.env ]; then
@@ -154,7 +154,7 @@ echo "5) calling proxy createDerivativeLimitOrder..."
 # Note that the margin, which is roughly the amount that would be taken from the
 # user's deposit if this transaction goes through (aka the "hold"), is covered by
 # the 300 USDT grant created above
-market_id="0x7cc8b10d7deb61e744ef83bdec2bbcf4a056867e89b062c6a453020ca82bd4e4" # INJ/USDT
+market_id="$MARKET_ID" # INJ/USDT PERP
 user_subaccount_id="$user_eth_address"000000000000000000000001
 quantity=125750000000000000000
 price=1450000000000000000

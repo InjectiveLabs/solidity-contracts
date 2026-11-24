@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 ################################################################################
 
@@ -129,8 +129,8 @@ create_namespace_res=$(echo 12345678 | injectived tx permissions create-namespac
     --from user2 \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
-    --gas 300000 \
-    --fees 500000inj \
+    --gas 1000000 \
+    --fees 1000000inj \
     --broadcast-mode sync \
     --yes \
     --output json \
@@ -149,8 +149,8 @@ create_namespace_res=$(echo 12345678 | injectived tx permissions create-namespac
     --from $USER \
     --chain-id $CHAIN_ID \
     --node $INJ_URL \
-    --gas 300000 \
-    --fees 500000inj \
+    --gas 1000000 \
+    --fees 1000000inj \
     --broadcast-mode sync \
     --yes \
     --output json \

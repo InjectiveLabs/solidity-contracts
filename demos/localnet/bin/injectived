@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#
+# Runs injectived inside the localnet container started by demos/localnet/start.sh,
+# so demos that call `injectived` work without a local binary:
+#
+#   export PATH="$(pwd)/demos/localnet/bin:$PATH"
+#
+# The container shares the node's network (localhost:26657 reaches it) and
+# mounts the repo at the same path, so --home and file arguments under the
+# repo work unchanged.
+
+set -euo pipefail
+
+CONTAINER="${LOCALNET_CONTAINER:-injective-localnet}"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+
+if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2> /dev/null)" != "true" ]; then
+    echo "injectived: container $CONTAINER is not running; start it with demos/localnet/start.sh" >&2
+    exit 1
+fi
+
+workdir=()
+case "$PWD/" in
+    "$REPO_ROOT"/*) workdir=(-w "$PWD") ;;
+esac
+
+exec docker exec -i --user "$(id -u):$(id -g)" -e HOME=/tmp ${workdir[@]+"${workdir[@]}"} "$CONTAINER" injectived "$@"

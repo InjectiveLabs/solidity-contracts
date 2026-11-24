@@ -33,13 +33,19 @@ full semantics.
 ## Requirements
 
 - `injectived` **v1.21.0 or later**. The V2 methods, `swapExactOutputV1` and
-  `erc20:` token resolution do not exist in v1.20.x. Use a v1.21.0 release
-  binary or build the tag:
+  `erc20:` token resolution do not exist in v1.20.x. Either:
 
-  ```
-  git clone --branch v1.21.0 https://github.com/InjectiveLabs/injective-core
-  cd injective-core && make install
-  ```
+  - **Docker** (any OS; the image is multi-arch). The demo runs the node and
+    every `injectived` command in the container:
+
+    ```
+    docker pull injectivelabs/injective-core:v1.21.0
+    ```
+
+  - **Release binary** (Linux x86-64): download `linux-amd64.zip` from the
+    [latest release](https://github.com/InjectiveFoundation/injective-core/releases).
+    Put `injectived` on your `PATH` and `libwasmvm.x86_64.so` on the library
+    path (e.g. `/usr/lib`, or `LD_LIBRARY_PATH`).
 
 - Foundry (`forge`, `cast`). Upstream Foundry works. The Injective fork adds
   bank precompile emulation to local simulation:
@@ -58,15 +64,27 @@ full semantics.
 
 ## Run the demo
 
+With Docker:
+
+```
+INJECTIVED_IMAGE=injectivelabs/injective-core:v1.21.0 ./demos/swap/demo.sh
+```
+
+With a local `injectived`:
+
 ```
 ./demos/swap/demo.sh
 ```
 
+If `injectived` is not on the `PATH` and Docker is available, the demo uses
+`injectivelabs/injective-core:v1.21.0` on its own.
+
 The script needs ports 26657, 8545, 9900 and 10337 to be free. It stops the node on
-exit.
+exit (in Docker, it removes the `swap-demo-injectived` container).
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `INJECTIVED` | `injectived` | Path to the node binary |
+| `INJECTIVED_IMAGE` | unset | Docker image to run `injectived` from instead |
 | `SWAP_DEMO_HOME` | `.injectived-swap-demo` | Chain home, wiped on every run |
 | `KEEP_NODE` | `0` | `1` leaves the node running afterwards |

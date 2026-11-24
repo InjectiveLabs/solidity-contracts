@@ -38,38 +38,37 @@ basically curl for gRPC servers.
 brew install grpcurl
 ```
 
-### Injectived
-
-Build from source and run a local `injectived` node.
-
-Clone `injectived`:
+or, on Linux (with Go):
 
 ```
-git clone -b release/v1.16.4 https://github.com/InjectiveFoundation/injective-core 
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl@v1.9.3
 ```
 
-Setup the genesis file:
+### Local chain
+
+The demo runs against a local Injective chain (v1.21.0 or later) from the
+public `injectivelabs/injective-core` Docker image. From the repo root:
 
 ```
-cd injective-core
-./setup.sh
+docker pull injectivelabs/injective-core:v1.21.0
+./demos/localnet/start.sh
+export PATH="$(pwd)/demos/localnet/bin:$PATH"
 ```
 
-Build and run `injectived`:
-
-```
-make install
-INJHOME="$(pwd)/.injectived" ./injectived.sh
-```
+`start.sh` creates the `user1` key and funds it. The `PATH` line
+makes the demo's `injectived` commands run inside the node's container. See
+[`demos/localnet`](../localnet/README.md) for details, using your own
+`injectived` binary instead, and stopping the chain.
 
 ## Run the demo
 
 ```
-INJ_HOME="$(pwd)/.injectived" ./demo.sh
+cd demos/erc20
+./demo.sh
 ```
 
 ## Run upgradeable token demo (Transparent Proxy + Implementation)
 
 ```
-INJ_HOME="$(pwd)/.injectived" ./demo_upgradeable.sh
+./demo_upgradeable.sh
 ```

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Load environment variables
 if [ -f ./.local.env ]; then
